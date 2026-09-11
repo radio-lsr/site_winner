@@ -4,8 +4,42 @@ Monorepo avec deux applications :
 
 | Dossier | Rôle | Stack |
 |---|---|---|
-| `winner-backend` | API REST | Node.js / Express 5 / MySQL |
+| `winner-backend` | API REST | Node.js / Express 5 / MySQL (ou SQLite) |
 | `winner-frontend` | Site public + back-office admin | Vue 3 / Vite / Vue Router / Axios |
+
+---
+
+## 🐳 Démarrage avec Docker (tout-en-un, recommandé)
+
+Prérequis : [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) ou Docker Engine (Linux).
+
+```bash
+# À la racine du projet
+cp .env.example .env        # optionnel : personnalisez mots de passe / JWT
+
+docker compose up -d --build
+```
+
+C'est tout. Docker démarre **MySQL + l'API + le site**, initialise le schéma de
+base et crée le compte admin automatiquement au premier lancement.
+
+- 🌐 Site : **http://localhost:8080**
+- 🔐 Admin : http://localhost:8080/admin/login → `admin@winner.local` / `Admin@Winner2026`
+
+Commandes utiles :
+
+```bash
+docker compose logs -f backend     # suivre les logs de l'API
+docker compose logs -f frontend    # logs nginx
+docker compose down                # arrêter (les données sont conservées)
+docker compose down -v             # arrêter et EFFACER base + uploads
+docker compose up -d --build       # reconstruire après modification du code
+```
+
+Variables personnalisables dans `.env` (racine) : `MYSQL_ROOT_PASSWORD`,
+`JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`.
+
+Les données persistent dans des volumes Docker (`mysql_data`, `uploads_data`).
 
 ---
 
@@ -21,6 +55,8 @@ Monorepo avec deux applications :
 ### 1. Backend (API sur http://localhost:5000)
 
 #### Option A — SQLite, sans rien installer
+
+Nécessite Node ≥ 22.13 (module natif `node:sqlite`, aucune dépendance).
 
 ```bash
 cd winner-backend
@@ -136,3 +172,4 @@ VITE_API_URL=http://localhost:5050
 - **Port 5000 déjà pris** : changez `PORT` dans `winner-backend/.env` puis `VITE_API_URL` côté frontend.
 - **Page admin qui boucle sur le login** : vérifiez que vous vous connectez avec un compte au rôle **Admin** (celui du seed).
 - **Repartir d'une base SQLite vierge** : supprimez `winner-backend/winner.db` puis relancez `npm run db:init` + `npm run db:seed`.
+- **`ExperimentalWarning: SQLite is an experimental feature`** : avertissement normal de Node.js, sans conséquence.

@@ -1,0 +1,83 @@
+# ============================================================
+# WINNER Multiservice — pile complète Docker
+#
+# Démarrage :
+#   docker compose up -d --build
+#
+# Le site est ensuite disponible sur : http://localhost:8080
+# Dashboard admin : http://localhost:8080/admin/login
+#   -> admin@winner.local / Admin@Winner2026 (voir .env)
+#
+# Arrêt :            docker compose down
+# Arrêt + purge BDD : docker compose down -v
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # Base de données MySQL
+  # ----------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: winner-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-winner_root_2026}
+      MYSQL_DATABASE: winner_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # ----------------------------------------------------------
+  # API Node.js / Express
+  # ----------------------------------------------------------
+  backend:
+    build: ./winner-backend
+    container_name: winner-backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-winner_root_2026}
+      DB_NAME: winner_db
+      # ⚠️ Changez ce secret en production :
+      #   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+      JWT_SECRET: ${JWT_SECRET:-9f2c8e1a7b4d4f6e8a0c2d4b6e8f0a1c3d5e7f9a1b3c5d7e9f0a2b4c6d8e0f1a}
+      # Compte admin créé au premier démarrage
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@winner.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Winner2026}
+      # Lien de réinitialisation de mot de passe (URL publique du site)
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    # Décommentez pour tester l'API directement :
+    # ports:
+    #   - "5000:5000"
+
+  # ----------------------------------------------------------
+  # Frontend Vue 3 servi par nginx (proxy /api et /uploads)
+  # ----------------------------------------------------------
+  frontend:
+    build:
+      context: ./winner-frontend
+      args:
+        VITE_API_URL: ""   # URLs relatives -> relayées par nginx au backend
+    container_name: winner-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  uploads_data:

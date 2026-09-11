@@ -7,8 +7,9 @@ const path = require('path');
  * Deux moteurs supportés, au choix via la variable d'environnement DB_ENGINE :
  *
  *   - (défaut) MySQL/MariaDB via mysql2 — production et développement classique.
- *   - DB_ENGINE=sqlite : base SQLite locale (fichier winner.db), pratique pour
- *     développer sans installer de serveur MySQL.
+ *   - DB_ENGINE=sqlite : base SQLite locale (fichier winner.db) via le module
+ *     natif node:sqlite (Node >= 22.13), pratique pour développer sans installer
+ *     de serveur MySQL. Aucune dépendance ni compilation requise.
  *
  * Dans les deux cas, le module expose la même interface que mysql2/promise :
  *   const [rows]  = await db.query('SELECT ...', [params]);
@@ -18,14 +19,16 @@ const path = require('path');
 if ((process.env.DB_ENGINE || '').toLowerCase() === 'sqlite') {
   // ------------------------------------------------------------------
   // Moteur SQLite (développement sans serveur MySQL)
+  // Utilise le module natif de Node.js (>= 22.13) : aucune dépendance
+  // externe ni compilation requise.
   // ------------------------------------------------------------------
-  const Database = require('better-sqlite3');
+  const { DatabaseSync } = require('node:sqlite');
   const fs = require('fs');
 
   const dbFile = process.env.DB_SQLITE_PATH || path.join(__dirname, '..', 'winner.db');
-  const sqlite = new Database(dbFile);
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
+  const sqlite = new DatabaseSync(dbFile);
+  sqlite.exec('PRAGMA journal_mode = WAL;');
+  sqlite.exec('PRAGMA foreign_keys = ON;');
 
   // Si la base est vide, on applique le schéma SQLite automatiquement
   const tableCount = sqlite
@@ -46,7 +49,7 @@ if ((process.env.DB_ENGINE || '').toLowerCase() === 'sqlite') {
       .replace(/\s+/g, ' ')
       .trim();
 
-  // better-sqlite3 n'accepte pas les objets Date : on les convertit en chaîne
+  // node:sqlite n'accepte pas les objets Date : on les convertit en chaîne
   const adapterParams = (params) =>
     (params || []).map(p => {
       if (p instanceof Date) {
@@ -69,9 +72,9 @@ if ((process.env.DB_ENGINE || '').toLowerCase() === 'sqlite') {
 
       const info = sqlite.prepare(s).run(...p);
       if (/^INSERT/i.test(s)) {
-        return [{ insertId: Number(info.lastInsertRowid), affectedRows: info.changes }, []];
+        return [{ insertId: Number(info.lastInsertRowid), affectedRows: Number(info.changes) }, []];
       }
-      return [{ affectedRows: info.changes }, []];
+      return [{ affectedRows: Number(info.changes) }, []];
     }
   };
 } else {

@@ -1,0 +1,10 @@
+# Ne pas copier dans l'image :
+node_modules
+npm-debug.log*
+.env
+.env.*
+winner.db
+winner.db-*
+uploads/*
+.git
+*.log
