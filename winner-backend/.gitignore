@@ -15,3 +15,9 @@ public/uploads/*
 # Logs
 *.log
 npm-debug.log*
+
+# Base SQLite locale (mode développement sans MySQL)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

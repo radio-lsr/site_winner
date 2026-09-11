@@ -129,19 +129,31 @@ exports.updateAvatar = async (req, res) => {
 // Récupérer tous les utilisateurs pour le tableau d'administration
 exports.getAllUsers = async (req, res) => {
   try {
-    // On alias (AS) certaines colonnes pour correspondre aux variables de votre Vue.js
+    // Le formatage de la date se fait en JS (compatible MySQL et SQLite)
     const query = `
-      SELECT id, nom, email, role, statut, avatar AS photo, 
-             DATE_FORMAT(created_at, '%d %b %Y') AS dateInscription, 
-             doitChangerMotDePasse 
-      FROM users 
+      SELECT id, nom, email, role, statut, avatar AS photo,
+             created_at, doitChangerMotDePasse
+      FROM users
       ORDER BY created_at DESC
     `;
     const [users] = await db.query(query);
-    
-    // Convertir 0/1 de MySQL en true/false pour Vue.js
+
+    const formatageDate = (d) => {
+      if (!d) return '';
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    // Convertir 0/1 de la BDD en true/false pour Vue.js
     const formattedUsers = users.map(u => ({
-      ...u,
+      id: u.id,
+      nom: u.nom,
+      email: u.email,
+      role: u.role,
+      statut: u.statut,
+      photo: u.photo,
+      dateInscription: formatageDate(u.created_at),
       doitChangerMotDePasse: u.doitChangerMotDePasse === 1
     }));
 

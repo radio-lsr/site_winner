@@ -14,20 +14,44 @@ Monorepo avec deux applications :
 ### Prérequis
 
 - **Node.js ≥ 22.18** (vérifier : `node --version`)
-- **MySQL 8** ou **MariaDB** installé et démarré
-- Git
+- Une base de données, **au choix** :
+  - 🟢 **Option A — SQLite (zéro installation, recommandé pour démarrer)** : rien à installer.
+  - 🔵 **Option B — MySQL 8 ou MariaDB** : pour un environnement proche de la production.
 
 ### 1. Backend (API sur http://localhost:5000)
+
+#### Option A — SQLite, sans rien installer
 
 ```bash
 cd winner-backend
 
-# Dépendances
 npm install
 
 # Configuration
 cp .env.example .env
+# Le .env.example contient déjà DB_ENGINE=sqlite — rien d'autre à régler.
+# (Optionnel : définissez JWT_SECRET, voir plus bas.)
+
+# Créer la base (fichier winner.db) et le compte admin
+npm run db:init
+npm run db:seed
+#   -> admin@winner.local / Admin@Winner2026
+#   -> personnalisable : ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run db:seed
+
+npm run dev
+# ✅ "🚀 Serveur démarré avec succès sur le port 5000"
+```
+
+#### Option B — MySQL / MariaDB
+
+```bash
+cd winner-backend
+
+npm install
+
+cp .env.example .env
 # Éditez .env :
+#   DB_ENGINE    -> laissez vide ou mettez mysql
 #   DB_PASSWORD  -> votre mot de passe MySQL
 #   JWT_SECRET   -> générez-en un fort :
 #                   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
@@ -37,14 +61,14 @@ npm run db:init
 # Alternative shell (Linux/macOS/cmd uniquement — PAS PowerShell) :
 #   mysql -u root -p < database/schema.sql
 
-# Créer le compte administrateur initial
 npm run db:seed
-#   -> admin@winner.local / Admin@Winner2026 par défaut
-#   -> personnalisable : ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run db:seed
-
-# Lancer (rechargement auto avec nodemon)
 npm run dev
-# ✅ "🚀 Serveur démarré avec succès sur le port 5000"
+```
+
+Générer un `JWT_SECRET` fort (recommandé dans tous les cas) :
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
 Test rapide : http://localhost:5000/ doit répondre
@@ -97,7 +121,7 @@ VITE_API_URL=http://localhost:5050
 |---|---|---|
 | `npm run dev` | backend | API en mode développement (nodemon) |
 | `npm start` | backend | API en production |
-| `npm run db:init` | backend | Exécute `database/schema.sql` |
+| `npm run db:init` | backend | Crée la base (SQLite ou MySQL selon `DB_ENGINE`) |
 | `npm run db:seed` | backend | Crée le compte admin initial |
 | `npm run dev` | frontend | Vite dev server (port 5173) |
 | `npm run build` | frontend | Build de production dans `dist/` |
@@ -105,7 +129,10 @@ VITE_API_URL=http://localhost:5050
 
 ## ⚠️ Problèmes fréquents
 
+- **`Impossible de se connecter à MySQL`** : MySQL n'est pas installé/démarré → passez en `DB_ENGINE=sqlite` dans `.env`, ou installez MySQL.
 - **`ER_ACCESS_DENIED_ERROR`** au démarrage du backend : mauvais `DB_USER`/`DB_PASSWORD` dans `.env`.
-- **`Table 'winner_db.users' doesn't exist`** : vous n'avez pas exécuté `schema.sql`.
+- **`Table 'winner_db.users' doesn't exist`** : vous n'avez pas exécuté `npm run db:init`.
+- **Erreur sur `<` dans PowerShell** : PowerShell ne supporte pas cette redirection — utilisez `npm run db:init`.
 - **Port 5000 déjà pris** : changez `PORT` dans `winner-backend/.env` puis `VITE_API_URL` côté frontend.
 - **Page admin qui boucle sur le login** : vérifiez que vous vous connectez avec un compte au rôle **Admin** (celui du seed).
+- **Repartir d'une base SQLite vierge** : supprimez `winner-backend/winner.db` puis relancez `npm run db:init` + `npm run db:seed`.
