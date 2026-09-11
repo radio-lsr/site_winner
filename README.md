@@ -32,8 +32,10 @@ cp .env.example .env
 #   JWT_SECRET   -> générez-en un fort :
 #                   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
-# Créer la base et toutes les tables
-mysql -u root -p < database/schema.sql        # ou : npm run db:init
+# Créer la base et toutes les tables (cross-platform, recommandé)
+npm run db:init
+# Alternative shell (Linux/macOS/cmd uniquement — PAS PowerShell) :
+#   mysql -u root -p < database/schema.sql
 
 # Créer le compte administrateur initial
 npm run db:seed
