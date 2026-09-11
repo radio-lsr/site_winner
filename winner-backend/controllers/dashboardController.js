@@ -38,6 +38,18 @@ exports.getStats = async (req, res) => {
       totalServices = serviceRows[0].total;
     } catch (e) {}
 
+    // 6. Photos (galerie) et vidéos (articles de type vidéo) pour DashboardOverview
+    let totalPhotos = 0;
+    let totalVideos = 0;
+    try {
+      const [photoRows] = await db.query('SELECT COUNT(*) as total FROM galerie');
+      totalPhotos = photoRows[0].total;
+    } catch (e) {}
+    try {
+      const [videoRows] = await db.query("SELECT COUNT(*) as total FROM articles WHERE type_article = 'video'");
+      totalVideos = videoRows[0].total;
+    } catch (e) {}
+
     // RÉPONSE AU FRONTEND : 
     // On s'assure d'envoyer la clé "products" attendue par votre composant
     res.json({
@@ -46,6 +58,8 @@ exports.getStats = async (req, res) => {
       articles: totalArticles,
       orders: totalOrders,
       totalServices: totalServices,
+      photos: totalPhotos,
+      videos: totalVideos,
       serverStatus: 'Online',
       uptime: process.uptime()
     });

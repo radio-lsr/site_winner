@@ -2,10 +2,15 @@ const db = require('../config/db');
 const fs = require('fs');
 const path = require('path');
 
-// 1. Récupérer tous les articles
+// 1. Récupérer les articles
+// - Visiteur anonyme : uniquement les articles au statut "Publié"
+// - Admin connecté : tous les articles (brouillons inclus)
 exports.getAllArticles = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM articles ORDER BY id DESC');
+    const estAdmin = req.user && req.user.role === 'Admin';
+    const [rows] = estAdmin
+      ? await db.query('SELECT * FROM articles ORDER BY id DESC')
+      : await db.query("SELECT * FROM articles WHERE statut = 'Publié' ORDER BY id DESC");
     res.json(rows);
   } catch (error) {
     console.error("Erreur lors de la récupération des articles :", error);
@@ -50,10 +55,12 @@ exports.createArticle = async (req, res) => {
   }
 };
 // 3. Modifier un article / tuto
+// Les champs non fournis conservent leur valeur existante (le frontend
+// n'envoie que titre, type_article, statut, contenu + éventuels fichiers).
 exports.updateArticle = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titre, type_article, user_id, statut, contenu, created_at } = req.body;
+    const { titre, type_article, statut, contenu } = req.body;
 
     const [rows] = await db.query('SELECT * FROM articles WHERE id = ?', [id]);
     if (rows.length === 0) {
@@ -61,11 +68,23 @@ exports.updateArticle = async (req, res) => {
     }
     const article = rows[0];
 
-    const imagePath = req.files && req.files['image'] ? `/uploads/${req.files['image'][0].filename}` : article.image_couverture;
-    const videoNom = req.files && req.files['video'] ? req.files['video'][0].originalname : article.fichier_video;
+    const imagePath = req.files && req.files['image_couverture']
+      ? `/uploads/${req.files['image_couverture'][0].filename}`
+      : article.image_couverture;
+    const videoPath = req.files && req.files['fichier_video']
+      ? `/uploads/${req.files['fichier_video'][0].filename}`
+      : article.fichier_video;
 
-    const query = `UPDATE articles SET titre = ?, type_article = ?, user_id = ?, statut = ?, contenu = ?, created_at = ?, image_couverture = ?, fichier_video = ? WHERE id = ?`;
-    await db.query(query, [titre, type_article, user_id, statut, contenu, created_at, imagePath, videoNom, id]);
+    const query = `UPDATE articles SET titre = ?, type_article = ?, statut = ?, contenu = ?, image_couverture = ?, fichier_video = ? WHERE id = ?`;
+    await db.query(query, [
+      titre ?? article.titre,
+      type_article || article.type_article,
+      statut || article.statut,
+      contenu ?? article.contenu,
+      imagePath,
+      videoPath,
+      id
+    ]);
 
     res.json({ message: "Article mis à jour avec succès." });
   } catch (error) {

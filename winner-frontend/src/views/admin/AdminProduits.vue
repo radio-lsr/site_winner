@@ -154,8 +154,10 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 // --- CONFIGURATION API ---
-const BACKEND_URL = 'http://localhost:5000' // Adresse du backend
-const API_URL = `${BACKEND_URL}/api/produits`
+import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+
+const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
+const API_URL = `${API_ROOT}/produits`
 
 const getAuthHeaders = () => ({
   headers: {

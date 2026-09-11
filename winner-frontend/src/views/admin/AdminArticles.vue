@@ -135,10 +135,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
 
 // --- CONFIGURATION API ---
-const BACKEND_URL = 'http://localhost:5000'
-const API_URL = `${BACKEND_URL}/api/articles`
+const BACKEND_URL = API_BASE_URL
+const API_URL = `${API_ROOT}/articles`
 
 // Injection du token JWT d'authentification
 const getAuthHeaders = () => ({
@@ -170,7 +171,8 @@ const formArticle = ref({
 // --- APPELS API BACKEND ---
 const fetchArticles = async () => {
   try {
-    const response = await axios.get(API_URL)
+    // Avec le token admin, le backend renvoie AUSSI les brouillons
+    const response = await axios.get(API_URL, getAuthHeaders())
     articles.value = response.data
   } catch (error) {
     console.error("Erreur lors de la récupération des articles :", error)

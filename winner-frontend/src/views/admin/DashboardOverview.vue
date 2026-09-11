@@ -136,6 +136,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { API_URL as API_ROOT } from '@/services/config'
 
 // Définition des statistiques dynamiques
 const stats = ref([
@@ -173,7 +174,7 @@ const trafficConicGradient = computed(() => {
 // Fonction principale pour récupérer les données de la BDD
 const fetchDashboardData = async () => {
   try {
-    const response = await axios.get('http://localhost:5000/api/dashboard/stats', {
+    const response = await axios.get(`${API_ROOT}/dashboard/stats`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }

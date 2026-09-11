@@ -4,7 +4,7 @@
       <!-- Carte d'identité / Aperçu du profil -->
       <div class="profile-card">
         <div class="avatar-container">
-          <img :src="user.avatar || '/OIP1.webp'" alt="Avatar" class="avatar-img" />
+          <img :src="avatarUrl" alt="Avatar" class="avatar-img" />
           <label class="avatar-upload-btn" title="Changer l'avatar">
             📷
             <input type="file" accept="image/*" @change="gererUploadAvatar" class="hidden-input" :disabled="isLoading" />
@@ -125,11 +125,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { API_URL, formatImageUrl } from '@/services/config'
 
 // --- CONFIGURATION API ---
-const API_URL = 'http://localhost:5000/api/profile'
+// Routes réelles du backend : /api/user/profile, /api/user/password, /api/user/avatar
+const PROFILE_URL = `${API_URL}/user/profile`
+
+// Injection du token JWT sur tous les appels
+const getAuthHeaders = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+})
+
+// URL absolue de l'avatar (chemin relatif renvoyé par le backend)
+const avatarUrl = computed(() => user.value.avatar ? formatImageUrl(user.value.avatar) : '/OIP1.webp')
 
 // --- DONNÉES RÉACTIVES ---
 const actifOnglet = ref('infos')
@@ -157,8 +167,8 @@ const passwordForm = ref({
 // 1. Récupérer les informations du profil utilisateur connecté
 const fetchProfil = async () => {
   try {
-    const response = await axios.get(API_URL)
-    user.value = response.data
+    const response = await axios.get(PROFILE_URL, getAuthHeaders())
+    user.value = { ...user.value, ...response.data }
   } catch (error) {
     console.error("Erreur lors de la récupération du profil :", error)
   }
@@ -178,8 +188,8 @@ const gererUploadAvatar = async (event) => {
   formData.append('avatar', fichier)
 
   try {
-    const response = await axios.post(`${API_URL}/avatar`, formData)
-    user.value.avatar = response.data.avatarUrl // Met à jour avec l'URL renvoyée par le serveur
+    const response = await axios.post(`${API_URL}/user/avatar`, formData, getAuthHeaders())
+    user.value.avatar = response.data.avatar // Chemin relatif renvoyé par le serveur
     afficherNotification('Avatar mis à jour avec succès !')
   } catch (error) {
     console.error("Erreur lors de l'upload de l'avatar :", error)
@@ -194,7 +204,7 @@ const gererUploadAvatar = async (event) => {
 const sauvegarderProfil = async () => {
   isLoading.value = true
   try {
-    await axios.put(API_URL, user.value)
+    await axios.put(PROFILE_URL, user.value, getAuthHeaders())
     afficherNotification('Profil mis à jour avec succès !')
   } catch (error) {
     console.error("Erreur lors de la mise à jour du profil :", error)
@@ -213,15 +223,15 @@ const modifierMotDePasse = async () => {
 
   isLoading.value = true
   try {
-    await axios.put(`${API_URL}/password`, {
-      actuel: passwordForm.value.actuel,
-      nouveau: passwordForm.value.nouveau
-    })
+    await axios.put(`${API_URL}/user/password`, {
+      currentPassword: passwordForm.value.actuel,
+      newPassword: passwordForm.value.nouveau
+    }, getAuthHeaders())
     afficherNotification('Mot de passe modifié avec succès !')
     passwordForm.value = { actuel: '', nouveau: '', confirmation: '' }
   } catch (error) {
     console.error("Erreur lors du changement de mot de passe :", error)
-    alert(error.response?.data?.message || 'Mot de passe actuel incorrect ou erreur serveur.')
+    alert(error.response?.data?.error || error.response?.data?.message || 'Mot de passe actuel incorrect ou erreur serveur.')
   } finally {
     isLoading.value = false
   }

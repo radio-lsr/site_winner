@@ -42,8 +42,10 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 // --- CONFIGURATION API ---
-const BACKEND_URL = 'http://localhost:5000'
-const API_URL = `${BACKEND_URL}/api/galerie`
+import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+
+const BACKEND_URL = API_BASE_URL
+const API_URL = `${API_ROOT}/galerie`
 
 // CORRECTION : Fonction pour inclure le token JWT dans les requêtes sécurisées
 const getAuthHeaders = () => ({

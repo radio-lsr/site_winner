@@ -120,9 +120,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { API_URL as API_ROOT, formatImageUrl } from '@/services/config';
 
 // --- CONFIGURATION API ---
-const API_URL = 'http://localhost:5000/api/auth/me'; // Adapter selon la route de profil admin de votre backend
+const ME_URL = `${API_ROOT}/auth/me`; // Profil de l'admin connecté
 
 const route = useRoute();
 const router = useRouter();
@@ -141,15 +142,22 @@ const adminInfo = ref({
 
 // Récupération des informations de l'admin connecté via Axios
 const fetchAdminProfile = async () => {
-  const token = localStorage.getItem('admin_token');
+  // Clé unique 'token' — celle écrite par authService lors du login
+  const token = localStorage.getItem('token');
   if (!token) return;
 
   isLoading.value = true;
   try {
-    const response = await axios.get(API_URL, {
+    const response = await axios.get(ME_URL, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    adminInfo.value = response.data;
+    const data = response.data;
+    adminInfo.value = {
+      nom: data.nom || '',
+      email: data.email || '',
+      role: data.role || '',
+      photo: formatImageUrl(data.avatar)
+    };
   } catch (error) {
     console.error("Erreur lors de la récupération du profil admin :", error);
     // Si le token est invalide ou expiré, on déconnecte par sécurité
@@ -187,14 +195,15 @@ const titrePage = computed(() => route.meta.title || 'Tableau de bord');
 const deconnexion = async () => {
   isLoading.value = true;
   try {
-    // Optionnel : Appel API de déconnexion si géré côté backend
-    // await axios.post('http://localhost:5000/api/auth/logout', {}, {
-    //   headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    // });
+    // Le JWT est sans état : on notifie le backend puis on purge le stockage local
+    await axios.post(`${API_ROOT}/auth/logout`, {}, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
   } catch (error) {
     console.error("Erreur déconnexion API", error);
   } finally {
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     isLoading.value = false;
     router.push('/admin/login');
   }

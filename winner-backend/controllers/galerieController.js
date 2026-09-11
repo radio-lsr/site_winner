@@ -62,7 +62,8 @@ exports.deleteMedia = async (req, res) => {
     const media = rows[0];
 
     if (media.image && media.image.startsWith('/uploads')) {
-      const filePath = path.join(__dirname, '../public', media.image);
+      // media.image = "/uploads/fichier.ext" -> backend/uploads/fichier.ext
+      const filePath = path.join(__dirname, '..', media.image);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

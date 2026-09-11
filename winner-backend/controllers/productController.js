@@ -1,9 +1,14 @@
 const db = require('../config/db');
 
-// 1. Récupérer tous les produits (GET)
+// 1. Récupérer les produits (GET)
+// - Visiteur anonyme : uniquement les produits actifs (visibles en boutique)
+// - Admin connecté : tous les produits
 exports.getAllProducts = async (req, res) => {
   try {
-    const [produits] = await db.query('SELECT * FROM produits ORDER BY created_at DESC');
+    const estAdmin = req.user && req.user.role === 'Admin';
+    const [produits] = estAdmin
+      ? await db.query('SELECT * FROM produits ORDER BY created_at DESC')
+      : await db.query("SELECT * FROM produits WHERE statut = 'actif' ORDER BY created_at DESC");
     
     const formattedProduits = produits.map(p => ({
       id: p.id,

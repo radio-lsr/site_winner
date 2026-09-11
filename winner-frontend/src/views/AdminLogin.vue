@@ -7,8 +7,35 @@
         <p>WINNER Multiservice</p>
       </div>
 
+      <!-- Formulaire de Réinitialisation (après réception du token) -->
+      <form v-if="modeReset" @submit.prevent="gererReset" class="login-form">
+        <h3>Nouveau mot de passe</h3>
+        <p class="reset-desc">Choisissez un nouveau mot de passe pour votre compte.</p>
+
+        <div v-if="messageSucces" class="alert-success">{{ messageSucces }}</div>
+        <div v-if="erreur" class="alert-error">{{ erreur }}</div>
+
+        <div class="form-group">
+          <label for="new-password">Nouveau mot de passe</label>
+          <input type="password" id="new-password" v-model="nouveauMdp" required minlength="8" placeholder="8 caractères minimum">
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-password">Confirmer le mot de passe</label>
+          <input type="password" id="confirm-password" v-model="confirmationMdp" required minlength="8" placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn-submit" :disabled="enAttente">
+          {{ enAttente ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
+        </button>
+
+        <button type="button" @click="modeReset = false; erreur = ''; messageSucces = ''" class="btn-back">
+          Retour à la connexion
+        </button>
+      </form>
+
       <!-- Formulaire de Connexion -->
-      <form v-if="!modeOubli" @submit.prevent="gererConnexion" class="login-form">
+      <form v-else-if="!modeOubli" @submit.prevent="gererConnexion" class="login-form">
         <div v-if="erreur" class="alert-error">{{ erreur }}</div>
 
         <div class="form-group">
@@ -76,16 +103,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import authService from '@/services/authService'; // Assurez-vous que le chemin correspond à votre arborescence
 
+const route = useRoute();
 const router = useRouter();
+
+// Lien reçu par email : /admin/login?reset=TOKEN
+onMounted(() => {
+  if (route.query.reset) {
+    resetToken.value = String(route.query.reset);
+    modeReset.value = true;
+  }
+});
 
 const email = ref('');
 const password = ref('');
 const emailRecuperation = ref('');
 const modeOubli = ref(false);
+const modeReset = ref(false);
+const resetToken = ref('');
+const nouveauMdp = ref('');
+const confirmationMdp = ref('');
 const erreur = ref('');
 const messageSucces = ref('');
 
@@ -99,10 +139,17 @@ const gererConnexion = async () => {
   
   try {
     // Appel à l'API via notre service (qui gère l'enregistrement du token)
-    await authService.login({
+    const data = await authService.login({
       email: email.value,
       password: password.value
     });
+
+    // Seuls les comptes Admin peuvent entrer dans le back-office
+    if (!data.user || data.user.role !== 'Admin') {
+      authService.logout();
+      erreur.value = "Ce compte n'a pas accès à l'espace d'administration.";
+      return;
+    }
     
     // Redirection vers le tableau de bord en cas de succès
     router.push('/admin');
@@ -114,20 +161,61 @@ const gererConnexion = async () => {
   }
 };
 
-// Simulation de la récupération de mot de passe
-const gererRecuperation = () => {
+// Récupération de mot de passe — appel réel au backend
+const gererRecuperation = async () => {
   erreur.value = '';
+  messageSucces.value = '';
   if (!emailRecuperation.value) {
     erreur.value = "Veuillez entrer une adresse email valide.";
     return;
   }
-  
-  // Simulation d'envoi d'e-mail de réinitialisation
-  messageSucces.value = "Un e-mail contenant les instructions a été envoyé à " + emailRecuperation.value;
-  setTimeout(() => {
-    emailRecuperation.value = '';
-    messageSucces.value = '';
-  }, 4000);
+
+  enAttente.value = true;
+  try {
+    const data = await authService.forgotPassword(emailRecuperation.value);
+    messageSucces.value = data.message || "Instructions envoyées.";
+
+    // Sans SMTP configuré, le backend (mode développement) renvoie le token
+    // directement : on propose alors la réinitialisation immédiate.
+    if (data.resetToken) {
+      resetToken.value = data.resetToken;
+      modeOubli.value = false;
+      modeReset.value = true;
+    }
+  } catch (error) {
+    erreur.value = error.response?.data?.error || "Erreur lors de l'envoi de la demande.";
+  } finally {
+    enAttente.value = false;
+  }
+};
+
+// Réinitialisation effective du mot de passe
+const gererReset = async () => {
+  erreur.value = '';
+  messageSucces.value = '';
+
+  if (nouveauMdp.value !== confirmationMdp.value) {
+    erreur.value = "Les deux mots de passe ne correspondent pas.";
+    return;
+  }
+
+  enAttente.value = true;
+  try {
+    const data = await authService.resetPassword(resetToken.value, nouveauMdp.value);
+    messageSucces.value = data.message || "Mot de passe réinitialisé.";
+    resetToken.value = '';
+    nouveauMdp.value = '';
+    confirmationMdp.value = '';
+    // Retour à la connexion après un court délai
+    setTimeout(() => {
+      modeReset.value = false;
+      messageSucces.value = '';
+    }, 2500);
+  } catch (error) {
+    erreur.value = error.response?.data?.error || "Erreur lors de la réinitialisation.";
+  } finally {
+    enAttente.value = false;
+  }
 };
 </script>
 

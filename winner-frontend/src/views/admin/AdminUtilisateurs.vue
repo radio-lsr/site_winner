@@ -167,10 +167,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
 
 // --- CONFIGURATION API ---
-const API_URL = 'http://localhost:5000/api/user' 
-const BACKEND_URL = 'http://localhost:5000' 
+const API_URL = `${API_ROOT}/user`
+const BACKEND_URL = API_BASE_URL
 
 const getConfig = () => {
   const token = localStorage.getItem('token')
@@ -183,11 +184,12 @@ const getConfig = () => {
 
 const getImageUrl = (path) => {
   if (!path) return '/OIP1.webp' // Image par défaut si vide
-  if (path.startsWith('http')) return path 
-  
-  // S'assure qu'il y a toujours un slash entre l'URL du backend et le chemin
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
-  return `${BACKEND_URL}${cleanPath}` 
+  if (path.startsWith('http')) return path
+
+  // Ancien format "public/uploads/xxx" -> servi sur "/uploads/xxx"
+  const cleaned = path.replace(/^public\//, '')
+  const cleanPath = cleaned.startsWith('/') ? cleaned : `/${cleaned}`
+  return `${BACKEND_URL}${cleanPath}`
 }
 
 const utilisateurs = ref([])

@@ -5,9 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const galerieController = require('../controllers/galerieController');
 const verifyToken = require('../middleware/authMiddleware');
+const { requireAdmin } = require('../middleware/roleMiddleware');
 
-// Configuration du dossier de stockage
-const uploadDir = path.join(__dirname, '../public/uploads');
+// Configuration du dossier de stockage (dossier uploads unique du backend)
+const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -26,7 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.get('/', galerieController.getAllMedias);
-router.post('/', verifyToken, upload.array('fichiers', 10), galerieController.createMedia); // Accepte jusqu'à 10 fichiers d'un coup
-router.delete('/:id', verifyToken, galerieController.deleteMedia);
+router.post('/', verifyToken, requireAdmin, upload.array('fichiers', 10), galerieController.createMedia); // Accepte jusqu'à 10 fichiers d'un coup
+router.delete('/:id', verifyToken, requireAdmin, galerieController.deleteMedia);
 
 module.exports = router;

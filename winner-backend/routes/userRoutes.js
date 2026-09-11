@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const verifyToken = require('../middleware/authMiddleware');
+const { requireAdmin } = require('../middleware/roleMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // ==========================
@@ -17,11 +18,11 @@ router.post('/avatar', verifyToken, upload.single('avatar'), userController.upda
 // ROUTES D'ADMINISTRATION
 // (Pour AdminUtilisateurs.vue)
 // ==========================
-router.get('/', verifyToken, userController.getAllUsers);
+router.get('/', verifyToken, requireAdmin, userController.getAllUsers);
 
 // L'administration utilise "photo" côté Vue.js (formData.append('photo', fichier))
-router.post('/', verifyToken, upload.single('photo'), userController.createUser);
-router.put('/:id', verifyToken, upload.single('photo'), userController.updateUser);
-router.delete('/:id', verifyToken, userController.deleteUser);
+router.post('/', verifyToken, requireAdmin, upload.single('photo'), userController.createUser);
+router.put('/:id', verifyToken, requireAdmin, upload.single('photo'), userController.updateUser);
+router.delete('/:id', verifyToken, requireAdmin, userController.deleteUser);
 
 module.exports = router;

@@ -88,20 +88,29 @@ const router = createRouter({
 });
 
 // Correction R0025 : Protection des routes administratives SANS utiliser next()
-router.beforeEach((to, from) => {
-  // On utilise 'token' car c'est ce que notre authService Axios génère
-  const isAuthenticated = localStorage.getItem('token') || localStorage.getItem('admin_token');
-  
+router.beforeEach((to) => {
+  // Clé unique 'token' — celle écrite par authService lors du login
+  const token = localStorage.getItem('token');
+
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user'));
+  } catch {
+    user = null;
+  }
+  const isAdmin = Boolean(user && user.role === 'Admin');
+  const isAuthenticated = Boolean(token);
+
   // Vérifie si la route actuelle OU un de ses parents possède la propriété requiresAuth
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
-  if (requiresAuth && !isAuthenticated) {
-    // Redirige vers le login si la page est protégée et l'utilisateur non authentifié
+
+  if (requiresAuth && (!isAuthenticated || !isAdmin)) {
+    // Non connecté, ou connecté sans le rôle Admin → page de connexion
     return '/admin/login';
   }
 
-  // Bonus : Empêche un utilisateur DÉJÀ connecté d'accéder à la page de login
-  if (to.path === '/admin/login' && isAuthenticated) {
+  // Bonus : Empêche un admin DÉJÀ connecté d'accéder à la page de login
+  if (to.path === '/admin/login' && isAuthenticated && isAdmin) {
     return '/admin';
   }
 

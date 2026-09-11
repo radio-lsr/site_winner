@@ -7,7 +7,7 @@
     <Hero />
     
     <!-- Services -->
-    <Services />
+    <Services :listeServices="listeServices" />
     
     <!-- Boutique / Produits -->
     <Boutique :listeProduits="listeProduits" @select-product="ouvrirDetailsProduit" />
@@ -52,7 +52,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { API_URL, formatImageUrl } from '../services/config';
 
 import Header from '../components/Header.vue';
 import Hero from '../components/Hero.vue';
@@ -146,15 +148,112 @@ const supprimerDuPanier = (index) => {
     }
 };
 
-const confirmerCommande = (formData) => {
-    console.log("Commande validée :", { client: formData, articles: panier.value });
-    commandeReussie.value = true;
+const confirmerCommande = async (formData) => {
+    // Envoi réel de la commande au backend (route publique POST /api/commandes)
+    try {
+        await axios.post(`${API_URL}/commandes`, {
+            nom: formData.nom,
+            telephone: formData.telephone,
+            adresse: formData.adresse,
+            dateLivraison: formData.date || null,
+            articles: panier.value.map(item => ({
+                id: item.id,
+                nom: item.nom,
+                prix: item.prix,
+                quantite: item.quantite
+            }))
+        });
+        commandeReussie.value = true;
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de la commande :", error);
+        alert("Impossible d'enregistrer la commande. Veuillez réessayer ou nous contacter par téléphone.");
+        return;
+    }
     setTimeout(() => {
         panier.value = [];
         commandeReussie.value = false;
         afficherPanierModal.value = false;
     }, 3500);
 };
+
+// ============================================================
+// CHARGEMENT DES DONNÉES DEPUIS L'API
+// Les listes codées en dur ci-dessus servent de secours si
+// l'API est injoignable (le site reste consultable).
+// ============================================================
+const chargerProduits = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/produits`);
+        if (Array.isArray(data) && data.length > 0) {
+            listeProduits.value = data.map(p => ({
+                id: p.id,
+                nom: p.nom,
+                prix: p.prix,
+                image: formatImageUrl(p.image),
+                specs: p.description || 'Produit disponible dans nos stations-service.'
+            }));
+        }
+    } catch (error) {
+        console.warn("API produits indisponible — affichage des données par défaut.", error?.message);
+    }
+};
+
+const chargerGalerie = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/galerie`);
+        if (Array.isArray(data) && data.length > 0) {
+            listeGalerie.value = data.map(item => ({
+                type: 'image',
+                url: formatImageUrl(item.image),
+                titre: item.titre || 'WINNER Multiservice'
+            }));
+        }
+    } catch (error) {
+        console.warn("API galerie indisponible — affichage des données par défaut.", error?.message);
+    }
+};
+
+const chargerArticles = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/articles`);
+        if (Array.isArray(data) && data.length > 0) {
+            listeArticles.value = data.map(a => ({
+                id: a.id,
+                titre: a.titre,
+                image: a.image_couverture ? formatImageUrl(a.image_couverture) : '/OIP2.webp',
+                extrait: (a.contenu || '').slice(0, 140) + ((a.contenu || '').length > 140 ? '…' : ''),
+                contenu: a.contenu || '',
+                type: a.type_article === 'video' ? 'video' : 'texte',
+                urlVideo: a.fichier_video ? formatImageUrl(a.fichier_video) : null
+            }));
+        }
+    } catch (error) {
+        console.warn("API articles indisponible — affichage des données par défaut.", error?.message);
+    }
+};
+
+const chargerServices = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/services`);
+        if (Array.isArray(data) && data.length > 0) {
+            listeServices.value = data
+                .filter(s => !s.statut || s.statut === 'actif')
+                .map(s => ({ titre: s.titre, description: s.description || '' }));
+        }
+    } catch (error) {
+        console.warn("API services indisponible — affichage des données par défaut.", error?.message);
+    }
+};
+
+// Services chargés depuis l'API (avec repli codé en dur dans Services.vue)
+const listeServices = ref([]);
+
+onMounted(() => {
+    chargerProduits();
+    chargerGalerie();
+    chargerArticles();
+    chargerServices();
+});
 </script>
 
 <style scoped>

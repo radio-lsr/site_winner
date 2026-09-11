@@ -352,7 +352,8 @@ const titrePage = computed(() => {
 });
 
 const deconnexion = () => {
-  localStorage.removeItem('admin_token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
   router.push('/admin/login');
 };
 </script>

@@ -11,7 +11,7 @@ const path = require('path');
 exports.getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, nom, email, avatar, created_at FROM users WHERE id = ?',
+      'SELECT id, nom, prenom, email, telephone, role, bio, avatar, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -29,7 +29,7 @@ exports.getProfile = async (req, res) => {
 // Mettre à jour les informations textuelles du profil
 exports.updateProfile = async (req, res) => {
   try {
-    const { nom, email } = req.body;
+    const { nom, email, prenom, telephone, bio } = req.body;
 
     if (!nom || !email) {
       return res.status(400).json({ error: 'Le nom et l\'email sont requis.' });
@@ -45,11 +45,11 @@ exports.updateProfile = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE users SET nom = ?, email = ? WHERE id = ?',
-      [nom, email, req.user.id]
+      'UPDATE users SET nom = ?, email = ?, prenom = ?, telephone = ?, bio = ? WHERE id = ?',
+      [nom, email, prenom || '', telephone || '', bio || '', req.user.id]
     );
 
-    res.json({ message: 'Profil mis à jour avec succès.', user: { nom, email } });
+    res.json({ message: 'Profil mis à jour avec succès.', user: { nom, email, prenom, telephone, bio } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erreur serveur lors de la mise à jour.' });
@@ -85,6 +85,14 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
+// Résout un chemin d'image stocké en BDD vers un chemin disque absolu.
+// Supporte l'ancien format ("public/uploads/x.png") et le nouveau ("/uploads/x.png").
+const resoudreCheminUpload = (storedPath) => {
+  if (!storedPath) return null;
+  const clean = storedPath.replace(/^public\//, '').replace(/^\//, '');
+  return path.join(__dirname, '..', clean);
+};
+
 // Mettre à jour l'avatar
 exports.updateAvatar = async (req, res) => {
   try {
@@ -92,14 +100,15 @@ exports.updateAvatar = async (req, res) => {
       return res.status(400).json({ error: 'Aucun fichier valide fourni.' });
     }
 
-    const avatarPath = `public/uploads/${req.file.filename}`;
+    // Format unifié : URL servie par Express via /uploads
+    const avatarPath = `/uploads/${req.file.filename}`;
 
     const [users] = await db.query('SELECT avatar FROM users WHERE id = ?', [req.user.id]);
     const oldAvatar = users[0]?.avatar;
 
     if (oldAvatar) {
-      const oldFullPath = path.join(__dirname, '..', oldAvatar);
-      if (fs.existsSync(oldFullPath)) {
+      const oldFullPath = resoudreCheminUpload(oldAvatar);
+      if (oldFullPath && fs.existsSync(oldFullPath)) {
         fs.unlinkSync(oldFullPath);
       }
     }
@@ -157,7 +166,7 @@ exports.createUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(motDePasseFinal, salt);
 
-    const avatarPath = req.file ? `public/uploads/${req.file.filename}` : null;
+    const avatarPath = req.file ? `/uploads/${req.file.filename}` : null;
     const forceChangePwd = doitChangerMotDePasse === 'true' ? 1 : 0;
 
     const query = `
@@ -192,7 +201,7 @@ exports.updateUser = async (req, res) => {
     }
 
     if (req.file) {
-      const avatarPath = `public/uploads/${req.file.filename}`;
+      const avatarPath = `/uploads/${req.file.filename}`;
       query += ', avatar = ?';
       params.push(avatarPath);
     }
