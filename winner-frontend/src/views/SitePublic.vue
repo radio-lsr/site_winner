@@ -185,13 +185,24 @@ const chargerProduits = async () => {
     try {
         const { data } = await axios.get(`${API_URL}/produits`);
         if (Array.isArray(data) && data.length > 0) {
-            listeProduits.value = data.map(p => ({
-                id: p.id,
-                nom: p.nom,
-                prix: p.prix,
-                image: formatImageUrl(p.image),
-                specs: p.description || 'Produit disponible dans nos stations-service.'
-            }));
+            listeProduits.value = data.map(p => {
+                const discount = Number(p.discount) || 0;
+                const prixOriginal = Number(p.prix) || 0;
+                // Prix réellement facturé (panier) = prix après remise
+                const prix = discount > 0
+                    ? Math.round(prixOriginal * (1 - discount / 100) * 100) / 100
+                    : prixOriginal;
+                return {
+                    id: p.id,
+                    nom: p.nom,
+                    prix,
+                    // Conservé uniquement s'il y a une remise -> affichage barré
+                    prixOriginal: discount > 0 ? prixOriginal : null,
+                    enSolde: discount > 0 || Boolean(p.enSolde),
+                    image: formatImageUrl(p.image),
+                    specs: p.description || 'Produit disponible dans nos stations-service.'
+                };
+            });
         }
     } catch (error) {
         console.warn("API produits indisponible — affichage des données par défaut.", error?.message);
