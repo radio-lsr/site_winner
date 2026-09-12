@@ -40,6 +40,11 @@
             <span class="icon">👥</span>
             <span v-if="!sidebarRetractee" class="nav-label">Utilisateurs</span>
           </router-link>
+
+          <router-link to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
+            <span class="icon">✉️<span v-if="messagesNonLus > 0" class="nav-badge">{{ messagesNonLus }}</span></span>
+            <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
+          </router-link>
         </nav>
       </div>
 
@@ -140,6 +145,22 @@ const adminInfo = ref({
   photo: ''
 });
 
+// Compteur de messages de contact non lus (badge dans le menu)
+const messagesNonLus = ref(0);
+
+const fetchMessagesNonLus = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const response = await axios.get(`${API_ROOT}/messages`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    messagesNonLus.value = (response.data || []).filter(m => !m.lu).length;
+  } catch (error) {
+    // Silencieux : le badge n'est pas critique
+  }
+};
+
 // Récupération des informations de l'admin connecté via Axios
 const fetchAdminProfile = async () => {
   // Clé unique 'token' — celle écrite par authService lors du login
@@ -184,6 +205,7 @@ const fermerMenuExterieur = () => {
 onMounted(() => {
   window.addEventListener('click', fermerMenuExterieur);
   fetchAdminProfile();
+  fetchMessagesNonLus();
 });
 
 onUnmounted(() => {
@@ -294,6 +316,23 @@ const deconnexion = async () => {
 .nav-item .icon {
   font-size: 18px;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Badge rouge "messages non lus" sur l'icône du menu */
+.nav-item .nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #E31E24;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  border-radius: 8px;
+  padding: 0 4px;
 }
 
 .sidebar:not(.collapsed) .nav-item .icon {

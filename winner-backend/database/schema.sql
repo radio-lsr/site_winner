@@ -98,6 +98,19 @@ CREATE TABLE IF NOT EXISTS commandes (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+-- Messages du formulaire de contact (demandes de devis)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(150) NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  telephone VARCHAR(50) DEFAULT '',
+  message TEXT NOT NULL,
+  lu TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
 -- Réinitialisation de mot de passe
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS password_resets (

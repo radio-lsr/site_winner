@@ -30,15 +30,16 @@ if ((process.env.DB_ENGINE || '').toLowerCase() === 'sqlite') {
   sqlite.exec('PRAGMA journal_mode = WAL;');
   sqlite.exec('PRAGMA foreign_keys = ON;');
 
-  // Si la base est vide, on applique le schéma SQLite automatiquement
+  // Applique le schéma SQLite à chaque démarrage (idempotent grâce aux
+  // CREATE TABLE IF NOT EXISTS) : les bases existantes migrent ainsi
+  // automatiquement lorsqu'on ajoute une table.
+  const schema = fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sqlite.sql'), 'utf8');
+  sqlite.exec(schema);
+
   const tableCount = sqlite
     .prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'users'")
     .get().n;
-  if (!tableCount) {
-    const schema = fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sqlite.sql'), 'utf8');
-    sqlite.exec(schema);
-    console.log(`[DB] Base SQLite initialisée automatiquement : ${dbFile}`);
-  } else {
+  if (tableCount) {
     console.log(`[DB] Moteur SQLite : ${dbFile}`);
   }
 

@@ -12,6 +12,7 @@ import AdminCommandes from '../views/admin/AdminCommandes.vue';
 import AdminArticles from '../views/admin/AdminArticles.vue';
 import AdminGalerie from '../views/admin/AdminGalerie.vue';
 import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
+import AdminMessages from '@/views/admin/AdminMessages.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -71,6 +72,12 @@ const routes = [
         name: 'AdminUtilisateurs',
         component: AdminUtilisateurs,
         meta: { title: 'Utilisateurs' }
+      },
+      {
+        path: 'messages', // (/admin/messages)
+        name: 'AdminMessages',
+        component: AdminMessages,
+        meta: { title: 'Messages & Devis' }
       },
       {
         path: 'profil', // (/admin/profil) 
