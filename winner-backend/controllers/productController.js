@@ -6,9 +6,14 @@ const db = require('../config/db');
 exports.getAllProducts = async (req, res) => {
   try {
     const estAdmin = req.user && req.user.role === 'Admin';
+    // Note moyenne + nombre d'avis par produit (affichés en boutique)
+    const selectAvis = `SELECT p.*,
+      (SELECT ROUND(AVG(a.note), 1) FROM avis_produits a WHERE a.produit_id = p.id) AS note_moyenne,
+      (SELECT COUNT(*) FROM avis_produits a WHERE a.produit_id = p.id) AS nb_avis
+      FROM produits p`;
     const [produits] = estAdmin
-      ? await db.query('SELECT * FROM produits ORDER BY created_at DESC')
-      : await db.query("SELECT * FROM produits WHERE statut = 'actif' ORDER BY created_at DESC");
+      ? await db.query(`${selectAvis} ORDER BY p.created_at DESC`)
+      : await db.query(`${selectAvis} WHERE p.statut = 'actif' ORDER BY p.created_at DESC`);
     
     const formattedProduits = produits.map(p => ({
       id: p.id,
@@ -22,6 +27,8 @@ exports.getAllProducts = async (req, res) => {
       disponible: p.statut === 'actif',
       statut: p.statut,
       image: p.image_produit || '/prod.webp',
+      noteMoyenne: parseFloat(p.note_moyenne) || 0,
+      nbAvis: parseInt(p.nb_avis, 10) || 0,
       created_at: p.created_at
     }));
 

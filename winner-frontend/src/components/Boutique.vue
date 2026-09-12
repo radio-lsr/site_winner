@@ -8,6 +8,11 @@
                   <img :src="produit.image" :alt="produit.nom">
               </div>
               <h3>{{ produit.nom }}</h3>
+              <!-- Note moyenne des clients (si des avis existent) -->
+              <p v-if="produit.nbAvis > 0" class="note-carte" :title="produit.noteMoyenne.toFixed(1) + '/5'">
+                  <span v-for="i in 5" :key="i" :class="i <= Math.round(produit.noteMoyenne) ? 'etoile-c pleine' : 'etoile-c'">★</span>
+                  <span class="nb-avis-carte">({{ produit.nbAvis }})</span>
+              </p>
               <!-- Prix en promotion : ancien prix barré + nouveau prix -->
               <div v-if="enPromo(produit)" class="prix-promo">
                   <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }} $</span>
@@ -44,6 +49,10 @@ const formatPrix = (v) => Number(v).toFixed(2);
 .produit-img-container { height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 15px; border-radius: 8px; background: white; }
 .produit-img-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
 .produit-card h3 { color: #143489; font-size: 18px; margin-bottom: 10px; }
+.note-carte { display: flex; justify-content: center; align-items: center; gap: 2px; margin: -4px 0 10px; font-size: 15px; }
+.etoile-c { color: #d1d5db; }
+.etoile-c.pleine { color: #f6a617; }
+.nb-avis-carte { color: #6b7280; font-size: 12px; margin-left: 4px; }
 .prix { color: #E31E24; font-size: 22px; font-weight: bold; margin-bottom: 15px; }
 /* --- Affichage promotion : barre + prix barré + nouveau prix --- */
 .promo-bar { position: absolute; top: 0; left: 0; right: 0; background: #E31E24; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 0; text-align: center; border-radius: 10px 10px 0 0; z-index: 2; }

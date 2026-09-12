@@ -13,6 +13,7 @@ import AdminArticles from '../views/admin/AdminArticles.vue';
 import AdminGalerie from '../views/admin/AdminGalerie.vue';
 import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
 import AdminMessages from '@/views/admin/AdminMessages.vue';
+import AdminAvis from '@/views/admin/AdminAvis.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -78,6 +79,12 @@ const routes = [
         name: 'AdminMessages',
         component: AdminMessages,
         meta: { title: 'Messages & Devis' }
+      },
+      {
+        path: 'avis', // (/admin/avis)
+        name: 'AdminAvis',
+        component: AdminAvis,
+        meta: { title: 'Avis & Commentaires' }
       },
       {
         path: 'profil', // (/admin/profil) 

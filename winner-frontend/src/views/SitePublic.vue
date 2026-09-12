@@ -200,7 +200,9 @@ const chargerProduits = async () => {
                     prixOriginal: discount > 0 ? prixOriginal : null,
                     enSolde: discount > 0 || Boolean(p.enSolde),
                     image: formatImageUrl(p.image),
-                    specs: p.description || 'Produit disponible dans nos stations-service.'
+                    specs: p.description || 'Produit disponible dans nos stations-service.',
+                    noteMoyenne: Number(p.noteMoyenne) || 0,
+                    nbAvis: Number(p.nbAvis) || 0
                 };
             });
         }

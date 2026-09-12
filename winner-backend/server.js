@@ -15,6 +15,8 @@ const articlesRoutes = require('./routes/articlesRoutes');
 const commandesRoutes = require('./routes/commandesRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
+const avisRoutes = require('./routes/avisRoutes');
+const commentairesRoutes = require('./routes/commentairesRoutes');
 
 // Importation du gestionnaire d'erreurs
 const errorHandler = require('./middleware/errorMiddleware');
@@ -57,6 +59,8 @@ app.use('/api/articles', articlesRoutes);
 app.use('/api/commandes', commandesRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/avis', avisRoutes);
+app.use('/api/commentaires', commentairesRoutes);
 
 // --- ROUTES UTILISATEURS (Profil personnel ET Administration CRUD) ---
 app.use('/api/user', userRoutes);

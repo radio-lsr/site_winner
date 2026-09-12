@@ -9,6 +9,13 @@
               </div>
               <div class="modal-info">
                   <h2>{{ produit.nom }}</h2>
+                  <!-- Note moyenne des clients (si avis) -->
+                  <p v-if="produit.nbAvis > 0" class="note-resume">
+                      <span class="etoiles-resume">
+                          <span v-for="i in 5" :key="i" :class="i <= Math.round(produit.noteMoyenne) ? 'etoile-r pleine' : 'etoile-r'">★</span>
+                      </span>
+                      {{ produit.noteMoyenne.toFixed(1) }}/5 · {{ produit.nbAvis }} avis
+                  </p>
                   <!-- Prix en promotion : ancien prix barré + nouveau prix -->
                   <p v-if="enPromo" class="prix-modal">
                       <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }} $</span>
@@ -24,12 +31,16 @@
                   </div>
               </div>
           </div>
+
+          <!-- Avis des clients sur ce produit -->
+          <EspaceAvis v-if="produit" typeAvis="produit" :cibleId="produit.id" />
       </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
+import EspaceAvis from './EspaceAvis.vue';
 
 const props = defineProps({
     produit: {
@@ -71,4 +82,7 @@ const ajouter = () => {
 .input-quantite { width: 60px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; text-align: center; }
 .btn { display: inline-block; padding: 12px 25px; background-color: #E31E24; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; text-transform: uppercase; transition: 0.3s; }
 .btn:hover { background-color: #80142D; }
+.note-resume { display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 13px; margin: 0 0 10px; }
+.etoile-r { color: #d1d5db; }
+.etoile-r.pleine { color: #f6a617; }
 </style>

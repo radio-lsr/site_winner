@@ -122,3 +122,29 @@ CREATE TABLE IF NOT EXISTS password_resets (
   CONSTRAINT fk_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_resets_token (token)
 ) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+-- Avis des visiteurs sur les produits
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS avis_produits (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  produit_id INT NOT NULL,
+  nom VARCHAR(150) NOT NULL,
+  note TINYINT NOT NULL,
+  commentaire TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_avis_produit FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE CASCADE,
+  CONSTRAINT chk_avis_note CHECK (note BETWEEN 1 AND 5)
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+-- Commentaires des visiteurs sur les Conseils & Tutos
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS commentaires_articles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  article_id INT NOT NULL,
+  nom VARCHAR(150) NOT NULL,
+  commentaire TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_commentaires_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

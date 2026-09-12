@@ -93,3 +93,22 @@ CREATE TABLE IF NOT EXISTS password_resets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_resets_token ON password_resets (token);
+
+-- Avis des visiteurs sur les produits
+CREATE TABLE IF NOT EXISTS avis_produits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  produit_id INTEGER NOT NULL REFERENCES produits(id) ON DELETE CASCADE,
+  nom TEXT NOT NULL,
+  note INTEGER NOT NULL CHECK (note BETWEEN 1 AND 5),
+  commentaire TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Commentaires des visiteurs sur les Conseils & Tutos
+CREATE TABLE IF NOT EXISTS commentaires_articles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  nom TEXT NOT NULL,
+  commentaire TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

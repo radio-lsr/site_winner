@@ -45,6 +45,11 @@
             <span class="icon">✉️<span v-if="notificationState.messagesNonLus > 0" class="nav-badge">{{ notificationState.messagesNonLus }}</span></span>
             <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
           </router-link>
+
+          <router-link to="/admin/avis" class="nav-item" active-class="active" title="Avis & Commentaires">
+            <span class="icon">💬</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Avis & Commentaires</span>
+          </router-link>
         </nav>
       </div>
 
