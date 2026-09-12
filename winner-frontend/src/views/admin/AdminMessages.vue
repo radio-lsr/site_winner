@@ -114,6 +114,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL } from '@/services/config'
+import { syncMessagesNonLus } from '@/services/notifications'
 
 const MESSAGES_URL = `${API_URL}/messages`
 
@@ -132,6 +133,7 @@ const fetchMessages = async () => {
   try {
     const response = await axios.get(MESSAGES_URL, getAuthHeaders())
     messages.value = response.data
+    syncMessagesNonLus(messages.value)
   } catch (error) {
     console.error('Erreur lors de la récupération des messages :', error)
   } finally {
@@ -155,6 +157,7 @@ const marquer = async (msg, lu) => {
   try {
     await axios.put(`${MESSAGES_URL}/${msg.id}`, { lu }, getAuthHeaders())
     msg.lu = lu
+    syncMessagesNonLus(messages.value)
   } catch (error) {
     console.error('Erreur lors de la mise à jour du message :', error)
   }
@@ -165,6 +168,7 @@ const supprimerMessage = async (id) => {
   try {
     await axios.delete(`${MESSAGES_URL}/${id}`, getAuthHeaders())
     messages.value = messages.value.filter(m => m.id !== id)
+    syncMessagesNonLus(messages.value)
     if (messageSelectionne.value?.id === id) messageSelectionne.value = null
   } catch (error) {
     console.error('Erreur lors de la suppression :', error)

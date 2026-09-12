@@ -142,6 +142,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios' // Ajout d'Axios pour les requêtes HTTP
 import { API_URL } from '@/services/config'
+import { syncCommandesEnAttente } from '@/services/notifications'
 
 // Injection du token JWT (les routes commandes exigent le rôle Admin)
 const getAuthHeaders = () => ({
@@ -171,6 +172,7 @@ const fetchCommandes = async () => {
   try {
     const response = await axios.get(API_COMMANDES, getAuthHeaders())
     commandes.value = response.data
+    syncCommandesEnAttente(commandes.value)
   } catch (error) {
     console.error("Erreur lors de la récupération des commandes:", error)
   }
@@ -193,7 +195,8 @@ const sauvegarderCommande = async () => {
     // Mise à jour de l'affichage local si succès
     commandeSelectionnee.value.livreur = formCommande.value.livreur
     commandeSelectionnee.value.statut = formCommande.value.statut
-    
+    syncCommandesEnAttente(commandes.value)
+
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la mise à jour :", error)
@@ -215,6 +218,7 @@ const annulerCommande = async (id) => {
       if (cmd) {
         cmd.statut = 'Annulée'
       }
+      syncCommandesEnAttente(commandes.value)
     } catch (error) {
       console.error("Erreur lors de l'annulation :", error)
       alert("Impossible d'annuler la commande.")

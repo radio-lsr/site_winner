@@ -42,7 +42,7 @@
           </router-link>
 
           <router-link to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
-            <span class="icon">✉️<span v-if="messagesNonLus > 0" class="nav-badge">{{ messagesNonLus }}</span></span>
+            <span class="icon">✉️<span v-if="notificationState.messagesNonLus > 0" class="nav-badge">{{ notificationState.messagesNonLus }}</span></span>
             <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
           </router-link>
         </nav>
@@ -77,12 +77,22 @@
         </div>
 
         <div class="topbar-right">
-          <button class="icon-btn" title="Notifications">
-            🔔 <span class="badge-dot"></span>
-          </button>
-          <button class="icon-btn" title="Messages">
-            ✉️
-          </button>
+          <router-link
+            to="/admin/commandes"
+            class="icon-btn"
+            :title="notificationState.commandesEnAttente > 0
+              ? notificationState.commandesEnAttente + ' nouvelle(s) commande(s) en attente'
+              : 'Commandes'">
+            🔔 <span v-if="notificationState.commandesEnAttente > 0" class="badge-count">{{ notificationState.commandesEnAttente }}</span>
+          </router-link>
+          <router-link
+            to="/admin/messages"
+            class="icon-btn"
+            :title="notificationState.messagesNonLus > 0
+              ? notificationState.messagesNonLus + ' message(s) non lu(s)'
+              : 'Messages & Devis'">
+            ✉️ <span v-if="notificationState.messagesNonLus > 0" class="badge-count">{{ notificationState.messagesNonLus }}</span>
+          </router-link>
 
           <!-- Profil Utilisateur Cliquable -->
           <div class="user-menu-container" @click.stop="toggleMenu">
@@ -126,6 +136,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { API_URL as API_ROOT, formatImageUrl } from '@/services/config';
+import { notificationState, refreshNotifications } from '@/services/notifications';
 
 // --- CONFIGURATION API ---
 const ME_URL = `${API_ROOT}/auth/me`; // Profil de l'admin connecté
@@ -145,21 +156,9 @@ const adminInfo = ref({
   photo: ''
 });
 
-// Compteur de messages de contact non lus (badge dans le menu)
-const messagesNonLus = ref(0);
-
-const fetchMessagesNonLus = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  try {
-    const response = await axios.get(`${API_ROOT}/messages`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    messagesNonLus.value = (response.data || []).filter(m => !m.lu).length;
-  } catch (error) {
-    // Silencieux : le badge n'est pas critique
-  }
-};
+// Badges de notification (enveloppe = messages non lus, cloche = commandes en attente).
+// L'état est partagé via services/notifications.js ; rafraîchi au montage puis toutes les 30 s.
+let timerNotifications = null;
 
 // Récupération des informations de l'admin connecté via Axios
 const fetchAdminProfile = async () => {
@@ -205,11 +204,14 @@ const fermerMenuExterieur = () => {
 onMounted(() => {
   window.addEventListener('click', fermerMenuExterieur);
   fetchAdminProfile();
-  fetchMessagesNonLus();
+  refreshNotifications();
+  // Vérifie périodiquement les nouveaux messages visiteurs et les nouvelles commandes
+  timerNotifications = setInterval(refreshNotifications, 30000);
 });
 
 onUnmounted(() => {
   window.removeEventListener('click', fermerMenuExterieur);
+  if (timerNotifications) clearInterval(timerNotifications);
 });
 
 const titrePage = computed(() => route.meta.title || 'Tableau de bord');
@@ -514,6 +516,8 @@ const deconnexion = async () => {
 .icon-btn {
   background: #f3f6fb;
   border: none;
+  text-decoration: none;
+  color: inherit;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -528,6 +532,23 @@ const deconnexion = async () => {
 
 .icon-btn:hover {
   background: #e5ebf5;
+}
+
+/* Compteur rouge sur la cloche / l'enveloppe de la navbar */
+.icon-btn .badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #E31E24;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 9px;
+  padding: 0 4px;
+  text-decoration: none;
 }
 
 .badge-dot {
