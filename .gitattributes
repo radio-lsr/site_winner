@@ -1,0 +1,19 @@
+# ============================================================
+# Fins de ligne
+# ------------------------------------------------------------
+# Les fichiers exécutés dans des conteneurs Linux DOIVENT être
+# en LF. Sous Windows, Git convertit par défaut en CRLF au
+# checkout, ce qui casse les scripts shell (erreur
+# "set: Illegal option -"), nginx, etc.
+# ============================================================
+
+# Scripts et fichiers Docker : toujours LF, même checkout Windows
+*.sh             text eol=lf
+Dockerfile       text eol=lf
+*.dockerignore   text eol=lf
+docker-compose.yml text eol=lf
+nginx.conf       text eol=lf
+*.sql            text eol=lf
+
+# Le reste : normalisation automatique
+* text=auto

@@ -1,6 +1,9 @@
 #!/bin/sh
 # ============================================================
 # Point d'entrée du conteneur backend
+# ⚠️ Ce fichier DOIT rester en fins de ligne LF (Unix) —
+#    garanti par .gitattributes et nettoyé par le Dockerfile.
+#
 #   1. Attend que MySQL soit prêt (si moteur MySQL)
 #   2. Crée la base et les tables (idempotent)
 #   3. Crée le compte administrateur (idempotent)

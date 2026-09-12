@@ -22,6 +22,8 @@ RUN npm run build
 # --- Étape 2 : serveur nginx ---
 FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Neutralise d'éventuelles fins de ligne Windows (CRLF)
+RUN sed -i 's/\r$//' /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

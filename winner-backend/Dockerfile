@@ -15,6 +15,10 @@ RUN npm ci --omit=dev
 # Code applicatif
 COPY . .
 
+# Sécurité : si le script d'entrée a été checkouté avec des fins de ligne
+# Windows (CRLF), on les retire — sinon "sh" échoue avec "Illegal option -"
+RUN sed -i 's/\r$//' docker-entrypoint.sh
+
 # Dossier des uploads (monté en volume nommé par docker-compose)
 RUN mkdir -p uploads
 
