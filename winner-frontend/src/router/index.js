@@ -131,4 +131,9 @@ router.beforeEach((to) => {
   // Si on ne retourne rien, Vue Router laisse passer la navigation naturellement
 });
 
+// Titre d'onglet dynamique : « Section · WINNER Multiservice »
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} · WINNER Multiservice` : 'WINNER Multiservice';
+});
+
 export default router;
