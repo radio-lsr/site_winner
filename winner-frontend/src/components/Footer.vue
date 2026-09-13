@@ -35,7 +35,6 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { API_URL } from '../services/config';
-import authService from '../services/authService';
 
 const contactForm = ref({
     nom: '',
@@ -43,13 +42,6 @@ const contactForm = ref({
     telephone: '',
     message: ''
 });
-
-// Visiteur connecté : on pré-remplit son identité (modifiable)
-const visiteurConnecte = authService.getCurrentUser();
-if (visiteurConnecte) {
-    contactForm.value.nom = visiteurConnecte.nom || '';
-    contactForm.value.email = visiteurConnecte.email || '';
-}
 
 const envoiEnCours = ref(false);
 const statut = ref({ type: '', texte: '' });

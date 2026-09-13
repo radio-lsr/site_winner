@@ -3,10 +3,7 @@
     <!-- En-tête -->
     <Header
         :cartItemCount="panier.length"
-        :utilisateur="utilisateur"
-        @open-cart="afficherPanierModal = true"
-        @open-auth="afficherAuthModal = true"
-        @logout="deconnexion" />
+        @open-cart="afficherPanierModal = true" />
     
     <!-- Section Héroïque -->
     <Hero />
@@ -44,12 +41,6 @@
       @close="fermerDetailsArticle" 
     />
 
-    <!-- Modale Connexion / Inscription visiteur -->
-    <AuthModal
-        v-if="afficherAuthModal"
-        @close="afficherAuthModal = false"
-        @connected="surConnecte" />
-
     <!-- Modale Panier -->
     <CartModal 
         v-if="afficherPanierModal" 
@@ -69,8 +60,6 @@ import { API_URL, formatImageUrl } from '../services/config';
 
 import Header from '../components/Header.vue';
 import Hero from '../components/Hero.vue';
-import AuthModal from '../components/AuthModal.vue';
-import authService from '../services/authService';
 import Services from '../components/Services.vue';
 import Boutique from '../components/Boutique.vue';
 import Galerie from '../components/Galerie.vue';
@@ -125,19 +114,6 @@ const listeArticles = ref([
 const panier = ref([]);
 const produitSelectionne = ref(null);
 
-// Compte visiteur (facultatif) : connexion / inscription / déconnexion
-const utilisateur = ref(authService.getCurrentUser());
-const afficherAuthModal = ref(false);
-
-const surConnecte = (user) => {
-    utilisateur.value = user || null;
-    afficherAuthModal.value = false;
-};
-
-const deconnexion = () => {
-    authService.logout();
-    utilisateur.value = null;
-};
 const articleSelectionne = ref(null);
 const afficherPanierModal = ref(false);
 const commandeReussie = ref(false);

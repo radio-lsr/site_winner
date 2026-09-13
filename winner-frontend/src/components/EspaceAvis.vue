@@ -72,7 +72,6 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { API_URL } from '../services/config';
-import authService from '../services/authService';
 
 const props = defineProps({
   // 'produit' => avis avec note étoiles ; 'article' => commentaire simple
@@ -90,7 +89,7 @@ const liste = ref([]);
 const envoiEnCours = ref(false);
 const statut = ref({ type: '', texte: '' });
 // Visiteur connecté : son nom est pré-rempli (modifiable)
-const form = ref({ nom: authService.getCurrentUser()?.nom || '', note: 0, commentaire: '' });
+const form = ref({ nom: '', note: 0, commentaire: '' });
 
 const noteMoyenne = computed(() => {
   if (liste.value.length === 0) return 0;

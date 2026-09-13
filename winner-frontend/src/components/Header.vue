@@ -13,16 +13,6 @@
               <li><a href="#articles">Conseils</a></li>
               <li><a href="#apropos">À Propos</a></li>
               <li>
-                  <!-- Compte visiteur : connexion facultative (inscription désactivée) -->
-                  <a v-if="!utilisateur" href="#" class="btn-compte" @click.prevent="$emit('open-auth')" title="Se connecter à votre compte">
-                      👤 Se connecter
-                  </a>
-                  <span v-else class="compte-connecte">
-                      <span class="nom-utilisateur" :title="utilisateur.email">👤 {{ utilisateur.nom }}</span>
-                      <button class="btn-logout-site" title="Se déconnecter" @click="$emit('logout')">Déconnexion</button>
-                  </span>
-              </li>
-              <li>
                   <a href="#" @click.prevent="$emit('open-cart')" class="btn-panier">
                       🛒 Panier <span v-if="cartItemCount > 0" class="badge">{{ cartItemCount }}</span>
                   </a>
@@ -33,17 +23,14 @@
 </template>
 
 <script setup>
+// Site vitrine : aucun compte client — le header ne gère que le panier.
 defineProps({
     cartItemCount: {
         type: Number,
         default: 0
-    },
-    utilisateur: {
-        type: Object,
-        default: null
     }
 });
-defineEmits(['open-cart', 'open-auth', 'logout']);
+defineEmits(['open-cart']);
 </script>
 
 <style scoped>
@@ -58,11 +45,6 @@ nav ul li a { text-decoration: none; color: #143489; font-weight: 600; transitio
 nav ul li a:hover { color: #E31E24; }
 .btn-panier { background: #143489; color: white !important; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 8px; }
 .btn-panier:hover { background: #80142D; }
-.btn-compte { background: #f4f6fb; border: 1px solid #d1d5db; color: #143489 !important; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
-.btn-compte:hover { border-color: #143489; }
-.compte-connecte { display: flex; align-items: center; gap: 8px; }
-.nom-utilisateur { color: #143489; font-weight: 700; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn-logout-site { background: none; border: none; color: #E31E24; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; }
 .badge { background: #E31E24; color: white; border-radius: 50%; padding: 2px 8px; font-size: 12px; }
 @media (max-width: 768px) {
     header { flex-direction: column; padding: 15px 20px; }
