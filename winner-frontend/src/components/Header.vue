@@ -13,8 +13,8 @@
               <li><a href="#articles">Conseils</a></li>
               <li><a href="#apropos">À Propos</a></li>
               <li>
-                  <!-- Compte visiteur : connexion / inscription facultatifs -->
-                  <a v-if="!utilisateur" href="#" class="btn-compte" @click.prevent="$emit('open-auth')" title="Se connecter ou créer un compte">
+                  <!-- Compte visiteur : connexion facultative (inscription désactivée) -->
+                  <a v-if="!utilisateur" href="#" class="btn-compte" @click.prevent="$emit('open-auth')" title="Se connecter à votre compte">
                       👤 Se connecter
                   </a>
                   <span v-else class="compte-connecte">

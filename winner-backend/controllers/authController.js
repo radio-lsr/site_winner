@@ -10,37 +10,9 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 heure
 const motDePasseValide = (password) =>
   typeof password === 'string' && password.length >= 8;
 
-// Inscription (crée un utilisateur simple — jamais un Admin)
-exports.register = async (req, res) => {
-  try {
-    const { nom, email, password } = req.body;
-
-    if (!nom || !email || !password) {
-      return res.status(400).json({ error: 'Tous les champs sont obligatoires.' });
-    }
-    if (!motDePasseValide(password)) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères.' });
-    }
-
-    const [existingUser] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    await db.query(
-      'INSERT INTO users (nom, email, password, role, statut) VALUES (?, ?, ?, ?, ?)',
-      [nom, email, hashedPassword, 'Utilisateur', 'Actif']
-    );
-
-    res.status(201).json({ message: 'Compte créé avec succès !' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erreur serveur lors de l\'inscription.' });
-  }
-};
+// Remarque : l'inscription publique a été supprimée.
+// Les comptes utilisateurs sont créés exclusivement par un administrateur
+// via userController.createUser (POST /api/user).
 
 // Connexion
 exports.login = async (req, res) => {

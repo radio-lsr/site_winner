@@ -10,10 +10,8 @@ export default {
     return response.data;
   },
 
-  async register(userData) {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
-  },
+  // L'inscription publique est désactivée : les comptes sont créés
+  // uniquement par un administrateur depuis le panneau d'administration.
 
   async getProfile() {
     const response = await api.get('/user/profile');

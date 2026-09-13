@@ -3,7 +3,8 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const verifyToken = require('../middleware/authMiddleware');
 
-router.post('/register', authController.register);
+// L'inscription publique est désactivée : les comptes sont créés
+// uniquement par un administrateur (POST /api/user).
 router.post('/login', authController.login);
 
 // Profil de l'utilisateur connecté (nom/photo du layout admin)
