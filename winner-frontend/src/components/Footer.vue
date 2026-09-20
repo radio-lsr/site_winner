@@ -25,9 +25,10 @@
               </form>
           </div>
       </div>
-      <div class="footer-bottom">
-          <p>&copy; 2026 WINNER Multiservice. Tous droits réservés. Créé pour le succès de votre réseau.</p>
-      </div>
+          <div class="footer-bottom">
+              <p>&copy; 2026 WINNER Multiservice. Tous droits réservés. Créé pour le succès de votre réseau.</p>
+              <router-link to="/admin/login" class="lien-admin" title="Accès réservé à l'administration">Espace administrateur</router-link>
+          </div>
   </footer>
 </template>
 
@@ -148,5 +149,18 @@ footer {
     border-top: 1px solid rgba(255,255,255,0.2);
     padding-top: 20px;
     font-size: 14px;
+}
+/* Lien discret vers l'administration */
+.lien-admin {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+    text-decoration: none;
+    letter-spacing: 0.4px;
+}
+.lien-admin:hover {
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: underline;
 }
 </style>

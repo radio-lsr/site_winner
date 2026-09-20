@@ -148,3 +148,12 @@ CREATE TABLE IF NOT EXISTS commentaires_articles (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_commentaires_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+-- Images de la bannière d'accueil (gérées depuis l'admin)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS hero_images (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  image VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

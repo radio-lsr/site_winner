@@ -50,6 +50,11 @@
             <span class="icon">💬</span>
             <span v-if="!sidebarRetractee" class="nav-label">Avis & Commentaires</span>
           </router-link>
+
+          <router-link to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
+            <span class="icon">🖼️</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Bannière d'accueil</span>
+          </router-link>
         </nav>
       </div>
 

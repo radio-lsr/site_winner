@@ -17,6 +17,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const messagesRoutes = require('./routes/messagesRoutes');
 const avisRoutes = require('./routes/avisRoutes');
 const commentairesRoutes = require('./routes/commentairesRoutes');
+const heroRoutes = require('./routes/heroRoutes');
 
 // Importation du gestionnaire d'erreurs
 const errorHandler = require('./middleware/errorMiddleware');
@@ -61,6 +62,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/avis', avisRoutes);
 app.use('/api/commentaires', commentairesRoutes);
+app.use('/api/hero', heroRoutes);
 
 // --- ROUTES UTILISATEURS (Profil personnel ET Administration CRUD) ---
 app.use('/api/user', userRoutes);

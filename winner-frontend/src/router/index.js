@@ -14,6 +14,7 @@ import AdminGalerie from '../views/admin/AdminGalerie.vue';
 import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
 import AdminMessages from '@/views/admin/AdminMessages.vue';
 import AdminAvis from '@/views/admin/AdminAvis.vue';
+import AdminHero from '@/views/admin/AdminHero.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -85,6 +86,12 @@ const routes = [
         name: 'AdminAvis',
         component: AdminAvis,
         meta: { title: 'Avis & Commentaires' }
+      },
+      {
+        path: 'hero', // (/admin/hero)
+        name: 'AdminHero',
+        component: AdminHero,
+        meta: { title: 'Bannière d\'accueil' }
       },
       {
         path: 'profil', // (/admin/profil) 

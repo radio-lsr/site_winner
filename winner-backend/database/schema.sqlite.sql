@@ -112,3 +112,10 @@ CREATE TABLE IF NOT EXISTS commentaires_articles (
   commentaire TEXT NOT NULL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Images de la bannière d'accueil (gérées depuis l'admin)
+CREATE TABLE IF NOT EXISTS hero_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  image TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
