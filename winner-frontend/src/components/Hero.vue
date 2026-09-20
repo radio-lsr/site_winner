@@ -39,12 +39,20 @@ import { API_URL, formatImageUrl } from '../services/config';
 // Visuels par défaut si aucune image n'est publiée ou si l'API est indisponible
 const IMAGES_DEFAUT = ['/OIP1.webp', '/prod.webp', '/telecharger.webp', '/OIP2.webp', '/prod1.webp'];
 
-const images = ref([...IMAGES_DEFAUT]);
+const images = ref([]);
 const slideActif = ref(0);
 const pause = ref(false);
 
 let timer = null;
 const DUREE = 6000; // 6 s par image
+
+// Précharge une URL : résout true si l'image charge vraiment, false sinon.
+const precharger = (src) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+});
 
 const demarrerTimer = () => {
     arreterTimer();
@@ -66,14 +74,24 @@ const allerA = (index) => {
 };
 
 onMounted(async () => {
+    let candidates = [];
     try {
         const { data } = await axios.get(`${API_URL}/hero`);
         if (Array.isArray(data) && data.length > 0) {
-            images.value = data.map(item => formatImageUrl(item.image));
+            candidates = data.map(item => formatImageUrl(item.image));
         }
     } catch (error) {
         console.warn('API hero indisponible — visuels par défaut.', error?.message);
     }
+    if (candidates.length === 0) candidates = [...IMAGES_DEFAUT];
+
+    // Ne garde que les images qui chargent réellement (évite tout fond cassé)
+    const results = await Promise.all(candidates.map(precharger));
+    let liste = candidates.filter((_, i) => results[i]);
+    if (liste.length === 0) liste = [...IMAGES_DEFAUT];
+
+    images.value = liste;
+    slideActif.value = 0;
     demarrerTimer();
 });
 

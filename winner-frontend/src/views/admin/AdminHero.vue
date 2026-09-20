@@ -19,6 +19,9 @@
     <div v-else class="hero-grid">
       <div v-for="(image, index) in images" :key="image.id" class="hero-card">
         <img :src="urlImage(image.image)" :alt="'Image bannière ' + (index + 1)">
+        <a class="lien-voir" :href="urlImage(image.image)" target="_blank" rel="noopener" title="Ouvrir l'image telle que servie au site public">
+          🔗 Voir côté site
+        </a>
         <div class="hero-card-actions">
           <span class="ordre">N° {{ index + 1 }}</span>
           <button class="btn-supprimer" title="Retirer de la bannière" @click="supprimerImage(image.id)">🗑️ Retirer</button>
@@ -104,6 +107,8 @@ const supprimerImage = async (id) => {
 .hero-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
 .hero-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 .hero-card img { width: 100%; height: 150px; object-fit: cover; display: block; }
+.lien-voir { display: block; padding: 6px 12px 0; font-size: 11px; color: #6b7280; text-decoration: none; }
+.lien-voir:hover { color: #143489; text-decoration: underline; }
 .hero-card-actions { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; }
 .ordre { font-size: 12px; font-weight: 700; color: #6b7280; }
 .btn-supprimer { background: none; border: 1px solid #dc2626; color: #dc2626; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
