@@ -1,11 +1,14 @@
 <template>
   <section id="accueil">
       <div class="slider-container" @mouseenter="pause = true" @mouseleave="pause = false">
+          <!-- Balises <img> : insensibles aux caractères spéciaux des noms de fichiers
+               (apostrophes, espaces...) qui cassent les background-image CSS -->
           <div
               v-for="(image, index) in images"
-              :key="image.id || index"
-              :class="['slide', index === slideActif && 'active']"
-              :style="{ backgroundImage: `url('${image}')` }"></div>
+              :key="index"
+              :class="['slide', index === slideActif && 'active']">
+              <img :src="image" alt="" class="slide-img">
+          </div>
       </div>
       <div class="slider-overlay"></div>
 
@@ -126,15 +129,22 @@ onUnmounted(arreterTimer);
     position: absolute;
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
     opacity: 0;
-    transform: scale(1.08);
-    transition: opacity 1.6s ease-in-out, transform 7s ease-out;
+    transition: opacity 1.6s ease-in-out;
 }
 /* Fondu enchaîné + léger zoom arrière effet "Ken Burns" */
 .slide.active {
     opacity: 1;
+}
+.slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scale(1.08);
+    transition: transform 7s ease-out;
+}
+.slide.active .slide-img {
     transform: scale(1);
 }
 .slider-overlay {

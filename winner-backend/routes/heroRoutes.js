@@ -19,7 +19,9 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'hero-' + uniqueSuffix + '-' + file.originalname);
+    // Nom de fichier assaini : évite apostrophes/espaces/accents dans les URLs
+    const safeName = String(file.originalname || 'image').replace(/[^a-zA-Z0-9.\-]+/g, '-');
+    cb(null, 'hero-' + uniqueSuffix + '-' + safeName);
   }
 });
 
