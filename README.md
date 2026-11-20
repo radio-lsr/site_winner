@@ -89,9 +89,11 @@ La réinitialisation du mot de passe est volontairement désactivée si SMTP n'e
 - Nginx envoie CSP et en-têtes de sécurité. Pour une exposition publique, terminez TLS sur un reverse proxy avec certificat valide et activez HSTS sur ce proxy. Le conteneur fourni sert HTTP local sur le port 8080.
 - Les secrets présents dans les anciens commits Git restent compromis tant que l'historique partagé n'a pas été purgé. Les mots de passe/JWT historiques doivent être révoqués immédiatement; la purge de l'historique GitHub exige une opération coordonnée par le propriétaire du dépôt et peut casser les clones existants.
 
-## 🌐 Déploiement sur VPS
+## 🌐 Déploiement sur cPanel / hébergement partagé
 
-Les étapes de production (Ubuntu 24.04, Docker, DNS, pare-feu, Nginx reverse proxy, HTTPS/Certbot, secrets et sauvegardes) sont détaillées dans [`DEPLOY_VPS.md`](DEPLOY_VPS.md).
+Pour le domaine `winnermutiservice.com`, suivez [`DEPLOY_CPANEL.md`](DEPLOY_CPANEL.md). Le déploiement de production se fait depuis `main` après fusion de la pull request. cPanel doit proposer une application Node.js persistante (Node 22.18+) pour héberger l'API; Docker n'est généralement pas disponible sur un hébergement partagé.
+
+Les étapes de déploiement sur VPS Ubuntu avec Docker sont disponibles séparément dans [`DEPLOY_VPS.md`](DEPLOY_VPS.md).
 
 ## Dépendances / contrôles
 

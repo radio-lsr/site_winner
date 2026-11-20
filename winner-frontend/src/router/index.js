@@ -140,6 +140,18 @@ router.beforeEach((to) => {
 // Titre d'onglet dynamique : « Section · WINNER Multiservice »
 router.afterEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · WINNER Multiservice` : 'WINNER Multiservice';
+  const routePrivee = /^\/(admin(?:\/|$)|login(?:\/|$))/i.test(to.path);
+  let robots = document.querySelector('meta[name="robots"]');
+  if (routePrivee) {
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.content = 'noindex, nofollow, noarchive';
+  } else if (robots) {
+    robots.remove();
+  }
 });
 
 export default router;
