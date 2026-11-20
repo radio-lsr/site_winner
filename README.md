@@ -89,6 +89,10 @@ La réinitialisation du mot de passe est volontairement désactivée si SMTP n'e
 - Nginx envoie CSP et en-têtes de sécurité. Pour une exposition publique, terminez TLS sur un reverse proxy avec certificat valide et activez HSTS sur ce proxy. Le conteneur fourni sert HTTP local sur le port 8080.
 - Les secrets présents dans les anciens commits Git restent compromis tant que l'historique partagé n'a pas été purgé. Les mots de passe/JWT historiques doivent être révoqués immédiatement; la purge de l'historique GitHub exige une opération coordonnée par le propriétaire du dépôt et peut casser les clones existants.
 
+## 🌐 Déploiement sur VPS
+
+Les étapes de production (Ubuntu 24.04, Docker, DNS, pare-feu, Nginx reverse proxy, HTTPS/Certbot, secrets et sauvegardes) sont détaillées dans [`DEPLOY_VPS.md`](DEPLOY_VPS.md).
+
 ## Dépendances / contrôles
 
 ```powershell

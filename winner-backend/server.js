@@ -30,7 +30,9 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 64 || /^(secret|c
   throw new Error('Configuration refusée : JWT_SECRET doit être un secret aléatoire d’au moins 64 caractères (aucune valeur par défaut).');
 }
 
-app.set('trust proxy', 1);
+const trustedProxyHops = Number(process.env.TRUST_PROXY || 1);
+if (!Number.isInteger(trustedProxyHops) || trustedProxyHops < 0 || trustedProxyHops > 5) throw new Error('TRUST_PROXY doit être un entier entre 0 et 5.');
+app.set('trust proxy', trustedProxyHops);
 app.disable('x-powered-by');
 app.use(helmet({
   contentSecurityPolicy: false, // CSP du frontend est gérée par le serveur web public.
