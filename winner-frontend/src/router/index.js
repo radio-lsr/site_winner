@@ -12,6 +12,9 @@ import AdminCommandes from '../views/admin/AdminCommandes.vue';
 import AdminArticles from '../views/admin/AdminArticles.vue';
 import AdminGalerie from '../views/admin/AdminGalerie.vue';
 import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
+import AdminMessages from '@/views/admin/AdminMessages.vue';
+import AdminAvis from '@/views/admin/AdminAvis.vue';
+import AdminHero from '@/views/admin/AdminHero.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -73,6 +76,24 @@ const routes = [
         meta: { title: 'Utilisateurs' }
       },
       {
+        path: 'messages', // (/admin/messages)
+        name: 'AdminMessages',
+        component: AdminMessages,
+        meta: { title: 'Messages & Devis' }
+      },
+      {
+        path: 'avis', // (/admin/avis)
+        name: 'AdminAvis',
+        component: AdminAvis,
+        meta: { title: 'Avis & Commentaires' }
+      },
+      {
+        path: 'hero', // (/admin/hero)
+        name: 'AdminHero',
+        component: AdminHero,
+        meta: { title: 'Bannière d\'accueil' }
+      },
+      {
         path: 'profil', // (/admin/profil) 
         name: 'ProfilUtilisateur',
         component: ProfilUtilisateur,
@@ -88,24 +109,49 @@ const router = createRouter({
 });
 
 // Correction R0025 : Protection des routes administratives SANS utiliser next()
-router.beforeEach((to, from) => {
-  // On utilise 'token' car c'est ce que notre authService Axios génère
-  const isAuthenticated = localStorage.getItem('token') || localStorage.getItem('admin_token');
-  
+router.beforeEach((to) => {
+  // Le cookie de session HttpOnly n'est pas lisible ici; ce profil local sert
+  // uniquement à l'expérience UI. L'API vérifie réellement chaque accès.
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user'));
+  } catch {
+    user = null;
+  }
+  const isAdmin = Boolean(user && user.role === 'Admin');
+  const isAuthenticated = Boolean(user);
+
   // Vérifie si la route actuelle OU un de ses parents possède la propriété requiresAuth
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
-  if (requiresAuth && !isAuthenticated) {
-    // Redirige vers le login si la page est protégée et l'utilisateur non authentifié
+
+  if (requiresAuth && (!isAuthenticated || !isAdmin)) {
+    // Non connecté, ou connecté sans le rôle Admin → page de connexion
     return '/admin/login';
   }
 
-  // Bonus : Empêche un utilisateur DÉJÀ connecté d'accéder à la page de login
-  if (to.path === '/admin/login' && isAuthenticated) {
+  // Bonus : Empêche un admin DÉJÀ connecté d'accéder à la page de login
+  if (to.path === '/admin/login' && isAuthenticated && isAdmin) {
     return '/admin';
   }
 
   // Si on ne retourne rien, Vue Router laisse passer la navigation naturellement
+});
+
+// Titre d'onglet dynamique : « Section · WINNER Multiservice »
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} · WINNER Multiservice` : 'WINNER Multiservice';
+  const routePrivee = /^\/(admin(?:\/|$)|login(?:\/|$))/i.test(to.path);
+  let robots = document.querySelector('meta[name="robots"]');
+  if (routePrivee) {
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.content = 'noindex, nofollow, noarchive';
+  } else if (robots) {
+    robots.remove();
+  }
 });
 
 export default router;

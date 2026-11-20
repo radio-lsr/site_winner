@@ -40,6 +40,21 @@
             <span class="icon">👥</span>
             <span v-if="!sidebarRetractee" class="nav-label">Utilisateurs</span>
           </router-link>
+
+          <router-link to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
+            <span class="icon">✉️<span v-if="notificationState.messagesNonLus > 0" class="nav-badge">{{ notificationState.messagesNonLus }}</span></span>
+            <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
+          </router-link>
+
+          <router-link to="/admin/avis" class="nav-item" active-class="active" title="Avis & Commentaires">
+            <span class="icon">💬</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Avis & Commentaires</span>
+          </router-link>
+
+          <router-link to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
+            <span class="icon">🖼️</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Bannière d'accueil</span>
+          </router-link>
         </nav>
       </div>
 
@@ -72,12 +87,22 @@
         </div>
 
         <div class="topbar-right">
-          <button class="icon-btn" title="Notifications">
-            🔔 <span class="badge-dot"></span>
-          </button>
-          <button class="icon-btn" title="Messages">
-            ✉️
-          </button>
+          <router-link
+            to="/admin/commandes"
+            class="icon-btn"
+            :title="notificationState.commandesEnAttente > 0
+              ? notificationState.commandesEnAttente + ' nouvelle(s) commande(s) en attente'
+              : 'Commandes'">
+            🔔 <span v-if="notificationState.commandesEnAttente > 0" class="badge-count">{{ notificationState.commandesEnAttente }}</span>
+          </router-link>
+          <router-link
+            to="/admin/messages"
+            class="icon-btn"
+            :title="notificationState.messagesNonLus > 0
+              ? notificationState.messagesNonLus + ' message(s) non lu(s)'
+              : 'Messages & Devis'">
+            ✉️ <span v-if="notificationState.messagesNonLus > 0" class="badge-count">{{ notificationState.messagesNonLus }}</span>
+          </router-link>
 
           <!-- Profil Utilisateur Cliquable -->
           <div class="user-menu-container" @click.stop="toggleMenu">
@@ -120,9 +145,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { API_URL as API_ROOT, formatImageUrl } from '@/services/config';
+import { notificationState, refreshNotifications } from '@/services/notifications';
 
 // --- CONFIGURATION API ---
-const API_URL = 'http://localhost:5000/api/auth/me'; // Adapter selon la route de profil admin de votre backend
+const ME_URL = `${API_ROOT}/auth/me`; // Profil de l'admin connecté
 
 const route = useRoute();
 const router = useRouter();
@@ -139,17 +166,22 @@ const adminInfo = ref({
   photo: ''
 });
 
+// Badges de notification (enveloppe = messages non lus, cloche = commandes en attente).
+// L'état est partagé via services/notifications.js ; rafraîchi au montage puis toutes les 30 s.
+let timerNotifications = null;
+
 // Récupération des informations de l'admin connecté via Axios
 const fetchAdminProfile = async () => {
-  const token = localStorage.getItem('admin_token');
-  if (!token) return;
-
   isLoading.value = true;
   try {
-    const response = await axios.get(API_URL, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    adminInfo.value = response.data;
+    const response = await axios.get(ME_URL, { withCredentials: true });
+    const data = response.data;
+    adminInfo.value = {
+      nom: data.nom || '',
+      email: data.email || '',
+      role: data.role || '',
+      photo: formatImageUrl(data.avatar)
+    };
   } catch (error) {
     console.error("Erreur lors de la récupération du profil admin :", error);
     // Si le token est invalide ou expiré, on déconnecte par sécurité
@@ -176,10 +208,14 @@ const fermerMenuExterieur = () => {
 onMounted(() => {
   window.addEventListener('click', fermerMenuExterieur);
   fetchAdminProfile();
+  refreshNotifications();
+  // Vérifie périodiquement les nouveaux messages visiteurs et les nouvelles commandes
+  timerNotifications = setInterval(refreshNotifications, 30000);
 });
 
 onUnmounted(() => {
   window.removeEventListener('click', fermerMenuExterieur);
+  if (timerNotifications) clearInterval(timerNotifications);
 });
 
 const titrePage = computed(() => route.meta.title || 'Tableau de bord');
@@ -187,14 +223,12 @@ const titrePage = computed(() => route.meta.title || 'Tableau de bord');
 const deconnexion = async () => {
   isLoading.value = true;
   try {
-    // Optionnel : Appel API de déconnexion si géré côté backend
-    // await axios.post('http://localhost:5000/api/auth/logout', {}, {
-    //   headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
-    // });
+    await axios.post(`${API_ROOT}/auth/logout`, {}, { withCredentials: true });
   } catch (error) {
     console.error("Erreur déconnexion API", error);
   } finally {
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     isLoading.value = false;
     router.push('/admin/login');
   }
@@ -285,6 +319,23 @@ const deconnexion = async () => {
 .nav-item .icon {
   font-size: 18px;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Badge rouge "messages non lus" sur l'icône du menu */
+.nav-item .nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #E31E24;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  border-radius: 8px;
+  padding: 0 4px;
 }
 
 .sidebar:not(.collapsed) .nav-item .icon {
@@ -466,6 +517,8 @@ const deconnexion = async () => {
 .icon-btn {
   background: #f3f6fb;
   border: none;
+  text-decoration: none;
+  color: inherit;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -480,6 +533,23 @@ const deconnexion = async () => {
 
 .icon-btn:hover {
   background: #e5ebf5;
+}
+
+/* Compteur rouge sur la cloche / l'enveloppe de la navbar */
+.icon-btn .badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #E31E24;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 9px;
+  padding: 0 4px;
+  text-decoration: none;
 }
 
 .badge-dot {

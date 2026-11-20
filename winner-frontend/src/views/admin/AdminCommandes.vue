@@ -141,6 +141,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios' // Ajout d'Axios pour les requêtes HTTP
+import { API_URL } from '@/services/config'
+import { syncCommandesEnAttente } from '@/services/notifications'
+
+// Injection du token JWT (les routes commandes exigent le rôle Admin)
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // --- ÉTATS GLOBAUX ---
 const commandes = ref([])
@@ -155,16 +160,17 @@ const formCommande = ref({
   statut: ''
 })
 
-// Configuration de l'URL de base (à adapter si votre route backend est différente)
-const API_URL = 'http://localhost:5000/api/commandes'
+// URL de base des commandes (centralisée dans services/config.js)
+const API_COMMANDES = `${API_URL}/commandes`
 
 // --- APPELS API (BACKEND) ---
 
 // 1. Récupérer toutes les commandes au chargement
 const fetchCommandes = async () => {
   try {
-    const response = await axios.get(API_URL)
+    const response = await axios.get(API_COMMANDES, getAuthHeaders())
     commandes.value = response.data
+    syncCommandesEnAttente(commandes.value)
   } catch (error) {
     console.error("Erreur lors de la récupération des commandes:", error)
   }
@@ -181,13 +187,14 @@ const sauvegarderCommande = async () => {
       statut: formCommande.value.statut
     }
 
-    // Appel PUT vers le backend
-    await axios.put(`${API_URL}/${commandeSelectionnee.value.id}`, payload)
+    // Appel PUT vers le backend (authentifié)
+    await axios.put(`${API_COMMANDES}/${commandeSelectionnee.value.id}`, payload, getAuthHeaders())
     
     // Mise à jour de l'affichage local si succès
     commandeSelectionnee.value.livreur = formCommande.value.livreur
     commandeSelectionnee.value.statut = formCommande.value.statut
-    
+    syncCommandesEnAttente(commandes.value)
+
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la mise à jour :", error)
@@ -201,14 +208,15 @@ const sauvegarderCommande = async () => {
 const annulerCommande = async (id) => {
   if (confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
     try {
-      // Appel PUT pour changer uniquement le statut
-      await axios.put(`${API_URL}/${id}`, { statut: 'Annulée' })
+      // Appel PUT pour changer uniquement le statut (authentifié)
+      await axios.put(`${API_COMMANDES}/${id}`, { statut: 'Annulée' }, getAuthHeaders())
       
       // Mise à jour de l'état local
       const cmd = commandes.value.find(c => c.id === id)
       if (cmd) {
         cmd.statut = 'Annulée'
       }
+      syncCommandesEnAttente(commandes.value)
     } catch (error) {
       console.error("Erreur lors de l'annulation :", error)
       alert("Impossible d'annuler la commande.")

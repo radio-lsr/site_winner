@@ -20,13 +20,14 @@ exports.getAllMedias = async (req, res) => {
 // 2. Créer / Uploader plusieurs médias à la fois (Sans titre ni description)
 exports.createMedia = async (req, res) => {
   try {
-    if (!req.files || req.files.length === 0) {
+    const files = Array.isArray(req.files) ? req.files : (req.files?.fichiers || []);
+    if (files.length === 0) {
       return res.status(400).json({ error: "Aucun fichier n'a été fourni." });
     }
 
     const insertedMedias = [];
 
-    for (const file of req.files) {
+    for (const file of files) {
       const imagePath = `/uploads/${file.filename}`;
 
       // Insertion uniquement de l'image (et created_at si la colonne existe)
@@ -62,7 +63,8 @@ exports.deleteMedia = async (req, res) => {
     const media = rows[0];
 
     if (media.image && media.image.startsWith('/uploads')) {
-      const filePath = path.join(__dirname, '../public', media.image);
+      // media.image = "/uploads/fichier.ext" -> backend/uploads/fichier.ext
+      const filePath = path.join(__dirname, '..', media.image);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

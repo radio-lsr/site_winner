@@ -18,12 +18,17 @@
                   <img :src="article.image" :alt="article.titre" class="modal-img">
                   <p class="article-full-text">{{ article.contenu }}</p>
               </div>
+
+              <!-- Commentaires des visiteurs sur cet article / tuto -->
+              <EspaceAvis typeAvis="article" :cibleId="article.id" />
           </div>
       </div>
   </div>
 </template>
 
 <script setup>
+import EspaceAvis from './EspaceAvis.vue';
+
 defineProps({
     article: {
         type: Object,

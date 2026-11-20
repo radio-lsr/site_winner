@@ -23,6 +23,7 @@
 </template>
 
 <script setup>
+// Site vitrine : aucun compte client — le header ne gère que le panier.
 defineProps({
     cartItemCount: {
         type: Number,

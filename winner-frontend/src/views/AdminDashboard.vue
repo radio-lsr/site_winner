@@ -332,6 +332,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import api from '../services/api';
 
 const router = useRouter();
 const ongletActif = ref('dashboard');
@@ -351,8 +352,10 @@ const titrePage = computed(() => {
   return titres[ongletActif.value] || 'Administration';
 });
 
-const deconnexion = () => {
-  localStorage.removeItem('admin_token');
+const deconnexion = async () => {
+  try { await api.post('/auth/logout'); } catch { /* le cookie peut déjà être expiré */ }
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
   router.push('/admin/login');
 };
 </script>
