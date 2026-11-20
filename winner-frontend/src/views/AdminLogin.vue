@@ -22,7 +22,7 @@
 
         <div class="form-group">
           <label for="confirm-password">Confirmer le mot de passe</label>
-          <input type="password" id="confirm-password" v-model="confirmationMdp" required minlength="8" placeholder="••••••••">
+          <input type="password" id="confirm-password" v-model="confirmationMdp" required minlength="12" placeholder="••••••••••••">
         </div>
 
         <button type="submit" class="btn-submit" :disabled="enAttente">
@@ -110,10 +110,11 @@ import authService from '@/services/authService'; // Assurez-vous que le chemin 
 const route = useRoute();
 const router = useRouter();
 
-// Lien reçu par email : /admin/login?reset=TOKEN
+// Le token est dans le fragment (#), jamais envoyé dans les requêtes HTTP ou les logs serveur.
 onMounted(() => {
-  if (route.query.reset) {
-    resetToken.value = String(route.query.reset);
+  const resetFromFragment = new URLSearchParams(route.hash.slice(1)).get('reset');
+  if (resetFromFragment) {
+    resetToken.value = resetFromFragment;
     modeReset.value = true;
   }
 });
@@ -138,7 +139,7 @@ const gererConnexion = async () => {
   enAttente.value = true;
   
   try {
-    // Appel à l'API via notre service (qui gère l'enregistrement du token)
+    // L'API dépose la session dans un cookie HttpOnly (inaccessible au JavaScript).
     const data = await authService.login({
       email: email.value,
       password: password.value
@@ -146,7 +147,7 @@ const gererConnexion = async () => {
 
     // Seuls les comptes Admin peuvent entrer dans le back-office
     if (!data.user || data.user.role !== 'Admin') {
-      authService.logout();
+      await authService.logout();
       erreur.value = "Ce compte n'a pas accès à l'espace d'administration.";
       return;
     }
@@ -175,13 +176,6 @@ const gererRecuperation = async () => {
     const data = await authService.forgotPassword(emailRecuperation.value);
     messageSucces.value = data.message || "Instructions envoyées.";
 
-    // Sans SMTP configuré, le backend (mode développement) renvoie le token
-    // directement : on propose alors la réinitialisation immédiate.
-    if (data.resetToken) {
-      resetToken.value = data.resetToken;
-      modeOubli.value = false;
-      modeReset.value = true;
-    }
   } catch (error) {
     erreur.value = error.response?.data?.error || "Erreur lors de l'envoi de la demande.";
   } finally {

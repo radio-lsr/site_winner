@@ -118,9 +118,7 @@ import { syncMessagesNonLus } from '@/services/notifications'
 
 const MESSAGES_URL = `${API_URL}/messages`
 
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 const messages = ref([])
 const isLoading = ref(false)

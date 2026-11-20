@@ -174,11 +174,7 @@ const trafficConicGradient = computed(() => {
 // Fonction principale pour récupérer les données de la BDD
 const fetchDashboardData = async () => {
   try {
-    const response = await axios.get(`${API_ROOT}/dashboard/stats`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
+    const response = await axios.get(`${API_ROOT}/dashboard/stats`, { withCredentials: true })
 
     const data = response.data
 

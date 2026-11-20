@@ -38,9 +38,7 @@ import { API_URL, formatImageUrl } from '@/services/config'
 
 const HERO_URL = `${API_URL}/hero`
 
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 const images = ref([])
 const envoiEnCours = ref(false)

@@ -1,30 +1,16 @@
-# ============================================================
-# WINNER Multiservice — pile complète Docker
-#
-# Démarrage :
-#   docker compose up -d --build
-#
-# Le site est ensuite disponible sur : http://localhost:8080
-# Dashboard admin : http://localhost:8080/admin/login
-#   -> admin@winner.local / Admin@Winner2026 (voir .env)
-#
-# Arrêt :            docker compose down
-# Arrêt + purge BDD : docker compose down -v
-# ============================================================
-
+# Configuration : copier .env.example vers .env puis définir toutes les valeurs secrètes.
 services:
-  # ----------------------------------------------------------
-  # Base de données MySQL
-  # ----------------------------------------------------------
   db:
     image: mysql:8.0
     container_name: winner-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-winner_root_2026}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Définir MYSQL_ROOT_PASSWORD dans .env}
       MYSQL_DATABASE: winner_db
+      MYSQL_APP_PASSWORD: ${MYSQL_PASSWORD:?Définir MYSQL_PASSWORD dans .env (hexadécimal)}
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./winner-backend/database/01-create-app-user.sh:/docker-entrypoint-initdb.d/01-create-app-user.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -32,9 +18,6 @@ services:
       retries: 30
       start_period: 20s
 
-  # ----------------------------------------------------------
-  # API Node.js / Express
-  # ----------------------------------------------------------
   backend:
     build: ./winner-backend
     container_name: winner-backend
@@ -43,38 +26,37 @@ services:
       PORT: 5000
       NODE_ENV: production
       DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-winner_root_2026}
+      DB_USER: winner_app
+      DB_PASSWORD: ${MYSQL_PASSWORD:?Définir MYSQL_PASSWORD dans .env}
       DB_NAME: winner_db
-      # ⚠️ Changez ce secret en production :
-      #   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-      JWT_SECRET: ${JWT_SECRET:-9f2c8e1a7b4d4f6e8a0c2d4b6e8f0a1c3d5e7f9a1b3c5d7e9f0a2b4c6d8e0f1a}
-      # Compte admin créé au premier démarrage
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@winner.local}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Winner2026}
-      # Lien de réinitialisation de mot de passe (URL publique du site)
+      JWT_SECRET: ${JWT_SECRET:?Définir JWT_SECRET dans .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Définir ADMIN_EMAIL dans .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Définir ADMIN_PASSWORD dans .env}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
-    # Décommentez pour tester l'API directement :
-    # ports:
-    #   - "5000:5000"
 
-  # ----------------------------------------------------------
-  # Frontend Vue 3 servi par nginx (proxy /api et /uploads)
-  # ----------------------------------------------------------
   frontend:
     build:
       context: ./winner-frontend
       args:
-        VITE_API_URL: ""   # URLs relatives -> relayées par nginx au backend
+        VITE_API_URL: ""
     container_name: winner-frontend
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       - backend
 

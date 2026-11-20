@@ -82,9 +82,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL } from '@/services/config'
 
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 const onglet = ref('avis')
 const avis = ref([])

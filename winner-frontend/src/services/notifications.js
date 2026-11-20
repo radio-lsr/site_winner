@@ -12,9 +12,7 @@ export const notificationState = reactive({
   commandesEnAttente: 0
 })
 
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // Recompte les messages non lus à partir d'une liste fournie
 // (utilisé par la page Messages pour une mise à jour instantanée)

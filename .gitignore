@@ -1,0 +1,19 @@
+# Secrets / configuration locales
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dependencies and generated builds
+node_modules/
+dist/
+build/
+coverage/
+
+# Runtime data and uploads
+winner-backend/*.db
+winner-backend/*.db-*
+winner-backend/uploads/*
+!winner-backend/uploads/.gitkeep

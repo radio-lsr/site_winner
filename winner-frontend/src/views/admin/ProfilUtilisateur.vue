@@ -99,7 +99,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Nouveau mot de passe</label>
-                <input v-model="passwordForm.nouveau" type="password" required placeholder="••••••••" :disabled="isLoading" />
+                <input v-model="passwordForm.nouveau" type="password" required minlength="12" placeholder="12 caractères minimum" :disabled="isLoading" />
               </div>
               <div class="form-group">
                 <label>Confirmer le nouveau mot de passe</label>
@@ -134,9 +134,7 @@ import { API_URL, formatImageUrl } from '@/services/config'
 const PROFILE_URL = `${API_URL}/user/profile`
 
 // Injection du token JWT sur tous les appels
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // URL absolue de l'avatar (chemin relatif renvoyé par le backend)
 const avatarUrl = computed(() => user.value.avatar ? formatImageUrl(user.value.avatar) : '/OIP1.webp')

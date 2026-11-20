@@ -1,59 +1,31 @@
-# WINNER Backend — API Node.js / Express / MySQL
+# API WINNER Multiservice
 
-API du site **WINNER Multiservice** (site vitrine + boutique + dashboard admin).
+## Développement local sous Windows / PowerShell
 
-## Installation
+1. Copiez `.env.example` en `.env`, puis renseignez `JWT_SECRET` avec 64 caractères aléatoires ou plus, `ADMIN_EMAIL` et `ADMIN_PASSWORD` (12 caractères minimum).
+2. Avec Node.js 22.18+ :
 
-```bash
-# 1. Installer les dépendances
+```powershell
+Copy-Item .env.example .env
+notepad .env
 npm install
-
-# 2. Configurer l'environnement
-cp .env.example .env
-#    → éditez .env (MySQL, secret JWT, compte admin)
-
-# 3. Créer la base et les tables
-mysql -u root -p < database/schema.sql     # ou : npm run db:init
-
-# 4. Créer le compte administrateur initial
+npm run db:init
 npm run db:seed
-#    Email / mot de passe par défaut : admin@winner.local / Admin@Winner2026
-#    (personnalisables via ADMIN_EMAIL / ADMIN_PASSWORD dans .env)
-
-# 5. Lancer le serveur
-npm run dev        # développement (nodemon)
-npm start          # production
+npm run dev
 ```
 
-## Endpoints principaux
+SQLite est le moteur local par défaut. Il n'exige aucun serveur ou logiciel MySQL. Pour générer un secret JWT :
 
-| Méthode | Route | Accès | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | public | Inscription (rôle Utilisateur) |
-| POST | `/api/auth/login` | public | Connexion → token JWT (24 h) |
-| GET | `/api/auth/me` | connecté | Profil de l'utilisateur connecté |
-| POST | `/api/auth/logout` | public | Déconnexion (le client supprime son token) |
-| POST | `/api/auth/forgot-password` | public | Demande de réinitialisation |
-| POST | `/api/auth/reset-password` | public | Réinitialisation via token |
-| GET | `/api/dashboard/stats` | Admin | Statistiques du tableau de bord |
-| GET | `/api/produits` | public* | *visiteurs : produits actifs uniquement |
-| POST/PUT/DELETE | `/api/produits...` | Admin | CRUD produits |
-| GET | `/api/articles` | public* | *visiteurs : articles « Publié » uniquement |
-| POST/PUT/DELETE | `/api/articles...` | Admin | CRUD articles & tutoriels |
-| GET | `/api/galerie` | public | Médiathèque |
-| POST/DELETE | `/api/galerie...` | Admin | Upload (10 fichiers max) / suppression |
-| GET | `/api/services` | public | Domaines d'expertise |
-| POST/DELETE | `/api/services...` | Admin | CRUD services |
-| POST | `/api/commandes` | public | Passage de commande depuis le panier |
-| GET/PUT | `/api/commandes...` | Admin | Suivi / mise à jour des commandes |
-| GET/PUT | `/api/user/profile`, `/password`, `/avatar` | connecté | Profil personnel |
-| GET/POST/PUT/DELETE | `/api/user...` | Admin | Gestion des utilisateurs |
+```powershell
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
 
-Les fichiers uploadés sont servis sur `/uploads/...`.
+En mode MySQL, configurez un compte applicatif dédié à `winner_db` (`DB_USER` ne doit jamais être `root`) et fournissez `DB_PASSWORD`. L'API échoue au démarrage sans JWT sûr; l'initialisation exige explicitement `ADMIN_EMAIL` et `ADMIN_PASSWORD`.
 
-## Sécurité
+## Réinitialisation du mot de passe
 
-- Les mots de passe sont hachés avec bcrypt.
-- Les routes d'administration exigent un token JWT **avec le rôle `Admin`**
-  (un simple utilisateur reçoit 403).
-- `.env` n'est plus versionné : ne commitez jamais de secrets.
+SMTP valide (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_EMAIL` selon l'usage) requis. En l'absence de SMTP, aucun token n'est créé, retourné ou journalisé. Les tokens de reset stockés dans la base sont hachés SHA-256 et expirent après une heure.
+
+## Principes de sécurité
+
+Routes admin vérifiées côté API; le rôle/statut/version de session sont relus en base à chaque appel authentifié. La session est stockée dans un cookie HttpOnly/SameSite=Strict, et non dans localStorage. Les uploads acceptent uniquement les images JPEG/PNG/WebP et médias MP4/WebM dont extension, MIME et signature correspondent. Les mots de passe sont hachés avec bcrypt; les actions sensibles ont des limites de débit.

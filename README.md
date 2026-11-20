@@ -1,175 +1,100 @@
-# WINNER Multiservice — Site vitrine + boutique + dashboard admin
+# WINNER Multiservice — site, boutique et administration
 
-Monorepo avec deux applications :
+Monorepo : API Express 5 (`winner-backend`) et application Vue 3 (`winner-frontend`). Le site est prévu pour être lancé localement sous Windows/PowerShell, ou entièrement dans Docker.
 
-| Dossier | Rôle | Stack |
-|---|---|---|
-| `winner-backend` | API REST | Node.js / Express 5 / MySQL (ou SQLite) |
-| `winner-frontend` | Site public + back-office admin | Vue 3 / Vite / Vue Router / Axios |
+## 🐳 Lancement Docker (recommandé)
 
----
+Prérequis : Docker Desktop démarré. Au premier lancement, créez des secrets propres à votre installation :
 
-## 🐳 Démarrage avec Docker (tout-en-un, recommandé)
-
-Prérequis : [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) ou Docker Engine (Linux).
-
-```bash
-# À la racine du projet
-cp .env.example .env        # optionnel : personnalisez mots de passe / JWT
-
-docker compose up -d --build
+```powershell
+cd D:\karl\site_winner
+Copy-Item .env.example .env
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+notepad .env
 ```
 
-C'est tout. Docker démarre **MySQL + l'API + le site**, initialise le schéma de
-base et crée le compte admin automatiquement au premier lancement.
+Dans `.env`, remplissez `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `JWT_SECRET`, `ADMIN_EMAIL` et `ADMIN_PASSWORD` avec des valeurs uniques. Pour `MYSQL_PASSWORD` et `JWT_SECRET`, générez des secrets hexadécimaux indépendants : `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` puis `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Le mot de passe admin doit faire au moins 12 caractères. Ne copiez pas de secret de cet exemple ou de l'historique Git. Pour une installation publique, remplacez aussi `CORS_ORIGINS` par l'origine exacte du site et réglez `COOKIE_SECURE=true` derrière HTTPS. Enregistrez le fichier, puis :
 
-- 🌐 Site : **http://localhost:8080**
-- 🔐 Admin : http://localhost:8080/admin/login → `admin@winner.local` / `Admin@Winner2026`
+```powershell
+docker compose up -d --build
+docker compose ps
+```
+
+Site : http://localhost:8080 — administration : http://localhost:8080/admin/login.
+
+L'application utilise un compte MySQL dédié `winner_app` limité à la base `winner_db`; elle ne se connecte pas en root. Les conteneurs backend et frontend tournent sans privilèges root. Les données sont conservées dans des volumes Docker.
 
 Commandes utiles :
 
-```bash
-docker compose logs -f backend     # suivre les logs de l'API
-docker compose logs -f frontend    # logs nginx
-docker compose down                # arrêter (les données sont conservées)
-docker compose down -v             # arrêter et EFFACER base + uploads
-docker compose up -d --build       # reconstruire après modification du code
+```powershell
+docker compose logs -f backend
+docker compose down
 ```
 
-Variables personnalisables dans `.env` (racine) : `MYSQL_ROOT_PASSWORD`,
-`JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`.
+`docker compose down -v` supprime définitivement la base et les uploads. Ne l'utilisez que si vous souhaitez effacer les données.
 
-Les données persistent dans des volumes Docker (`mysql_data`, `uploads_data`).
+**Base Docker existante :** les variables `MYSQL_USER` ne créent l'utilisateur applicatif que lors de l'initialisation d'un volume MySQL neuf. Sauvegardez d'abord la base. Pour un volume existant, démarrez provisoirement MySQL avec l'ancien `MYSQL_ROOT_PASSWORD` afin de garder le healthcheck valide, puis créez/renouvelez le compte applicatif depuis le client MySQL :
 
----
-
-## 🚀 Lancer le projet en local
-
-### Prérequis
-
-- **Node.js ≥ 22.18** (vérifier : `node --version`)
-- Une base de données, **au choix** :
-  - 🟢 **Option A — SQLite (zéro installation, recommandé pour démarrer)** : rien à installer.
-  - 🔵 **Option B — MySQL 8 ou MariaDB** : pour un environnement proche de la production.
-
-### 1. Backend (API sur http://localhost:5000)
-
-#### Option A — SQLite, sans rien installer
-
-Nécessite Node ≥ 22.13 (module natif `node:sqlite`, aucune dépendance).
-
-```bash
-cd winner-backend
-
-npm install
-
-# Configuration
-cp .env.example .env
-# Le .env.example contient déjà DB_ENGINE=sqlite — rien d'autre à régler.
-# (Optionnel : définissez JWT_SECRET, voir plus bas.)
-
-# Créer la base (fichier winner.db) et le compte admin
-npm run db:init
-npm run db:seed
-#   -> admin@winner.local / Admin@Winner2026
-#   -> personnalisable : ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run db:seed
-
-npm run dev
-# ✅ "🚀 Serveur démarré avec succès sur le port 5000"
+```powershell
+docker compose exec db mysql -uroot -p
 ```
 
-#### Option B — MySQL / MariaDB
+Dans le client MySQL, créez `winner_app` avec le mot de passe défini dans `MYSQL_PASSWORD`, puis accordez-lui seulement les droits sur `winner_db` : `CREATE USER IF NOT EXISTS 'winner_app'@'%' IDENTIFIED BY 'MOT_DE_PASSE_MYSQL_PASSWORD'; ALTER USER 'winner_app'@'%' IDENTIFIED BY 'MOT_DE_PASSE_MYSQL_PASSWORD'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES ON winner_db.* TO 'winner_app'@'%'; FLUSH PRIVILEGES;`. Pour faire tourner aussi le mot de passe root compromis, exécutez `ALTER USER 'root'@'localhost' IDENTIFIED BY 'NOUVEAU_MYSQL_ROOT_PASSWORD';`, mettez la même nouvelle valeur dans `.env`, puis redémarrez les services. Utilisez des secrets hexadécimaux générés aléatoirement pour éviter les problèmes de guillemets SQL.
 
-```bash
-cd winner-backend
+Les anciennes valeurs root/JWT/admin ont été publiées et doivent être considérées compromises : changez-les. Modifier `.env` seul ne fait pas tourner le mot de passe d'un serveur MySQL déjà initialisé. Réglez `COOKIE_SECURE=true` derrière un HTTPS public; laissez `false` uniquement pour HTTP local.
 
+## 🧪 Développement local (sans MySQL)
+
+Prérequis : Node.js 22.18 ou plus récent. SQLite est inclus via le module natif `node:sqlite` : aucun serveur MySQL à installer.
+
+1. Copiez `winner-backend/.env.example` vers `winner-backend/.env` et définissez un `JWT_SECRET` aléatoire d'au moins 64 caractères, `ADMIN_EMAIL` et un `ADMIN_PASSWORD` unique d'au moins 12 caractères.
+2. Dans PowerShell :
+
+```powershell
+cd D:\karl\site_winner\winner-backend
+Copy-Item .env.example .env
+notepad .env
 npm install
-
-cp .env.example .env
-# Éditez .env :
-#   DB_ENGINE    -> laissez vide ou mettez mysql
-#   DB_PASSWORD  -> votre mot de passe MySQL
-#   JWT_SECRET   -> générez-en un fort :
-#                   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-
-# Créer la base et toutes les tables (cross-platform, recommandé)
 npm run db:init
-# Alternative shell (Linux/macOS/cmd uniquement — PAS PowerShell) :
-#   mysql -u root -p < database/schema.sql
-
 npm run db:seed
 npm run dev
 ```
 
-Générer un `JWT_SECRET` fort (recommandé dans tous les cas) :
+3. Dans un second terminal :
 
-```bash
+```powershell
+cd D:\karl\site_winner\winner-frontend
+npm install
+npm run dev
+```
+
+Site de développement : http://localhost:5173. Les origines locales autorisées sont listées dans le `.env.example` du backend; les appels passent normalement par le proxy Vite.
+
+Pour générer un secret sûr :
+
+```powershell
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-Test rapide : http://localhost:5000/ doit répondre
-`{"message":"API WINNER en cours d'exécution..."}`
+La réinitialisation du mot de passe est volontairement désactivée si SMTP n'est pas configuré : aucun token de secours n'est renvoyé par l'API ni inscrit dans les logs. Renseignez les paramètres SMTP dans `.env` pour activer l'envoi par email.
 
-### 2. Frontend (site sur http://localhost:5173)
+## 🔐 Sécurité et exploitation
 
-Dans un **second terminal** :
+- Les comptes sont créés uniquement par un administrateur; mots de passe bcrypt (12 tours), minimum 12 caractères pour les changements/créations.
+- Les sessions sont des JWT dans un cookie `HttpOnly`, `SameSite=Strict` (pas dans `localStorage`); les routes privées relisent rôle, statut et version de session en base. Désactivation, rétrogradation, déconnexion ou changement de mot de passe révoque les anciennes sessions.
+- Les commandes utilisent les prix, promotions, statut et stock de la base, jamais les prix fournis par le navigateur.
+- Rate limiting sur connexion, réinitialisation, contact, commandes, avis et commentaires.
+- Les uploads sont limités à des formats image/vidéo autorisés, contrôlés par extension, MIME et signature de contenu, avec noms aléatoires et tailles maximales. SVG/HTML sont refusés.
+- CORS est fermé par défaut; configurez `CORS_ORIGINS` uniquement pour les origines API externes réellement nécessaires. Le frontend Docker utilise le proxy same-origin.
+- Nginx envoie CSP et en-têtes de sécurité. Pour une exposition publique, terminez TLS sur un reverse proxy avec certificat valide et activez HSTS sur ce proxy. Le conteneur fourni sert HTTP local sur le port 8080.
+- Les secrets présents dans les anciens commits Git restent compromis tant que l'historique partagé n'a pas été purgé. Les mots de passe/JWT historiques doivent être révoqués immédiatement; la purge de l'historique GitHub exige une opération coordonnée par le propriétaire du dépôt et peut casser les clones existants.
 
-```bash
-cd winner-frontend
+## Dépendances / contrôles
 
-npm install
-npm run dev
-# ✅ Vite affiche Local: http://localhost:5173/
+```powershell
+cd D:\karl\site_winner\winner-backend
+npm audit
+cd ..\winner-frontend
+npm audit
+npm run build
 ```
-
-Ouvrez http://localhost:5173 dans votre navigateur.
-
-Par défaut le frontend appelle l'API sur `http://localhost:5000`.
-Pour viser une autre API : créez `winner-frontend/.env.local` contenant
-
-```
-VITE_API_URL=http://localhost:5050
-```
-
-(ou `VITE_API_URL=` vide pour passer par le proxy Vite `/api` → `VITE_PROXY_TARGET`).
-
-### 3. Se connecter au dashboard admin
-
-- URL : http://localhost:5173/admin/login
-- Email : `admin@winner.local`
-- Mot de passe : `Admin@Winner2026` (celui du seed — à changer en production)
-
----
-
-## 📌 Parcours de test rapide
-
-1. **Site public** : les produits, services et conseils s'affichent depuis l'API.
-2. **Commande** : ajoutez un produit au panier 🛒 → validez → elle apparaît dans
-   l'admin, page **Commandes** (statut « En attente », livreur assignable).
-3. **Produits** : créez un produit dans l'admin avec image → il apparaît sur le site.
-4. **Articles** : créez un article avec image de couverture et passez-le en
-   « Publié » → visible dans la section Conseils du site.
-5. **Profil** : /admin/profil — changement de nom, avatar, mot de passe.
-
-## 🔧 Scripts utiles
-
-| Commande | Dossier | Effet |
-|---|---|---|
-| `npm run dev` | backend | API en mode développement (nodemon) |
-| `npm start` | backend | API en production |
-| `npm run db:init` | backend | Crée la base (SQLite ou MySQL selon `DB_ENGINE`) |
-| `npm run db:seed` | backend | Crée le compte admin initial |
-| `npm run dev` | frontend | Vite dev server (port 5173) |
-| `npm run build` | frontend | Build de production dans `dist/` |
-| `npm run lint` | frontend | ESLint + oxlint avec auto-fix |
-
-## ⚠️ Problèmes fréquents
-
-- **`Impossible de se connecter à MySQL`** : MySQL n'est pas installé/démarré → passez en `DB_ENGINE=sqlite` dans `.env`, ou installez MySQL.
-- **`ER_ACCESS_DENIED_ERROR`** au démarrage du backend : mauvais `DB_USER`/`DB_PASSWORD` dans `.env`.
-- **`Table 'winner_db.users' doesn't exist`** : vous n'avez pas exécuté `npm run db:init`.
-- **Erreur sur `<` dans PowerShell** : PowerShell ne supporte pas cette redirection — utilisez `npm run db:init`.
-- **Port 5000 déjà pris** : changez `PORT` dans `winner-backend/.env` puis `VITE_API_URL` côté frontend.
-- **Page admin qui boucle sur le login** : vérifiez que vous vous connectez avec un compte au rôle **Admin** (celui du seed).
-- **Repartir d'une base SQLite vierge** : supprimez `winner-backend/winner.db` puis relancez `npm run db:init` + `npm run db:seed`.
-- **`ExperimentalWarning: SQLite is an experimental feature`** : avertissement normal de Node.js, sans conséquence.

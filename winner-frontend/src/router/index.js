@@ -110,9 +110,8 @@ const router = createRouter({
 
 // Correction R0025 : Protection des routes administratives SANS utiliser next()
 router.beforeEach((to) => {
-  // Clé unique 'token' — celle écrite par authService lors du login
-  const token = localStorage.getItem('token');
-
+  // Le cookie de session HttpOnly n'est pas lisible ici; ce profil local sert
+  // uniquement à l'expérience UI. L'API vérifie réellement chaque accès.
   let user = null;
   try {
     user = JSON.parse(localStorage.getItem('user'));
@@ -120,7 +119,7 @@ router.beforeEach((to) => {
     user = null;
   }
   const isAdmin = Boolean(user && user.role === 'Admin');
-  const isAuthenticated = Boolean(token);
+  const isAuthenticated = Boolean(user);
 
   // Vérifie si la route actuelle OU un de ses parents possède la propriété requiresAuth
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);

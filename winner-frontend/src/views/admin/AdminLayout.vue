@@ -172,15 +172,9 @@ let timerNotifications = null;
 
 // Récupération des informations de l'admin connecté via Axios
 const fetchAdminProfile = async () => {
-  // Clé unique 'token' — celle écrite par authService lors du login
-  const token = localStorage.getItem('token');
-  if (!token) return;
-
   isLoading.value = true;
   try {
-    const response = await axios.get(ME_URL, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await axios.get(ME_URL, { withCredentials: true });
     const data = response.data;
     adminInfo.value = {
       nom: data.nom || '',
@@ -229,10 +223,7 @@ const titrePage = computed(() => route.meta.title || 'Tableau de bord');
 const deconnexion = async () => {
   isLoading.value = true;
   try {
-    // Le JWT est sans état : on notifie le backend puis on purge le stockage local
-    await axios.post(`${API_ROOT}/auth/logout`, {}, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    });
+    await axios.post(`${API_ROOT}/auth/logout`, {}, { withCredentials: true });
   } catch (error) {
     console.error("Erreur déconnexion API", error);
   } finally {

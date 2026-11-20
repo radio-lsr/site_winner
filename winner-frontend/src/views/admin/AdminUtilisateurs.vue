@@ -62,7 +62,7 @@
               <input 
                 v-model="formUtilisateur.password" 
                 :type="afficherMotDePasse ? 'text' : 'password'" 
-                :placeholder="idEnEdition ? 'Laisser vide si inchangé' : 'Ex: Temp#2026 (généré si vide)'" 
+                :placeholder="idEnEdition ? 'Laisser vide si inchangé' : '12 caractères minimum'"
                 :disabled="isLoading"
               />
               <button type="button" class="toggle-pwd-btn" @click="afficherMotDePasse = !afficherMotDePasse" :disabled="isLoading">
@@ -173,14 +173,7 @@ import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
 const API_URL = `${API_ROOT}/user`
 const BACKEND_URL = API_BASE_URL
 
-const getConfig = () => {
-  const token = localStorage.getItem('token')
-  return {
-    headers: {
-      Authorization: `Bearer ${token}` 
-    }
-  }
-}
+const getConfig = () => ({ withCredentials: true })
 
 const getImageUrl = (path) => {
   if (!path) return '/OIP1.webp' // Image par défaut si vide
@@ -309,7 +302,7 @@ const soumettreUtilisateur = async () => {
       afficherNotification(`Utilisateur ${formUtilisateur.value.nom} mis à jour avec succès.`)
     } else {
       await axios.post(API_URL, formData, getConfig())
-      afficherNotification(`✉️ E-mail envoyé à ${formUtilisateur.value.email} avec le mot de passe temporaire.`)
+      afficherNotification(`Utilisateur ${formUtilisateur.value.nom} créé. Transmettez son mot de passe par un canal sécurisé.`)
     }
     
     await fetchUtilisateurs()

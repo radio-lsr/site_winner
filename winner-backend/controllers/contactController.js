@@ -11,7 +11,7 @@ exports.createMessage = async (req, res) => {
       return res.status(400).json({ error: 'Le nom, l\'email et le message sont obligatoires.' });
     }
 
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$$/.test(String(email).trim());
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email).trim());
     if (!emailOk) {
       return res.status(400).json({ error: 'Adresse email invalide.' });
     }
@@ -34,7 +34,7 @@ exports.createMessage = async (req, res) => {
     );
 
     // Notification par email si SMTP configuré (ne bloque jamais le visiteur)
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.CONTACT_EMAIL) {
       try {
         const nodemailer = require('nodemailer');
         const transporter = nodemailer.createTransport({
@@ -45,7 +45,7 @@ exports.createMessage = async (req, res) => {
         });
         await transporter.sendMail({
           from: process.env.SMTP_FROM || process.env.SMTP_USER,
-          to: process.env.CONTACT_EMAIL || 'mavinga1@gmail.com',
+          to: process.env.CONTACT_EMAIL,
           subject: `📩 Nouveau message de ${clean.nom} (site WINNER)`,
           text: `Nom : ${clean.nom}\nEmail : ${clean.email}\nTéléphone : ${clean.telephone || 'non renseigné'}\n\nMessage :\n${clean.message}`,
           replyTo: clean.email

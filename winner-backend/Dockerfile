@@ -13,17 +13,18 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 # Code applicatif
-COPY . .
+COPY --chown=node:node . .
 
 # Sécurité : si le script d'entrée a été checkouté avec des fins de ligne
 # Windows (CRLF), on les retire — sinon "sh" échoue avec "Illegal option -"
 RUN sed -i 's/\r$//' docker-entrypoint.sh
 
 # Dossier des uploads (monté en volume nommé par docker-compose)
-RUN mkdir -p uploads
+RUN mkdir -p uploads && chown -R node:node /app
 
 ENV NODE_ENV=production
 EXPOSE 5000
+USER node
 
 # Point d'entrée : attend MySQL, crée le schéma, seed l'admin, lance l'API
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]

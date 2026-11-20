@@ -80,8 +80,11 @@ if ((process.env.DB_ENGINE || '').toLowerCase() === 'sqlite') {
   };
 } else {
   // ------------------------------------------------------------------
-  // Moteur MySQL / MariaDB (défaut)
+  // Moteur MySQL / MariaDB (défaut) : compte d'application obligatoire.
   // ------------------------------------------------------------------
+  if (!process.env.DB_HOST || !process.env.DB_NAME || !process.env.DB_USER || !process.env.DB_PASSWORD || process.env.DB_USER.toLowerCase() === 'root') {
+    throw new Error('MySQL requiert DB_HOST, DB_NAME et un compte applicatif non-root avec DB_PASSWORD.');
+  }
   const mysql = require('mysql2');
 
   const pool = mysql.createPool({

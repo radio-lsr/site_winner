@@ -8,9 +8,10 @@ const path = require('path');
 exports.getAllArticles = async (req, res) => {
   try {
     const estAdmin = req.user && req.user.role === 'Admin';
+    const colonnesPubliques = 'id, titre, contenu, type_article, fichier_video, image_couverture, statut, created_at';
     const [rows] = estAdmin
-      ? await db.query('SELECT * FROM articles ORDER BY id DESC')
-      : await db.query("SELECT * FROM articles WHERE statut = 'Publié' ORDER BY id DESC");
+      ? await db.query(`SELECT ${colonnesPubliques} FROM articles ORDER BY id DESC`)
+      : await db.query(`SELECT ${colonnesPubliques} FROM articles WHERE statut = 'Publié' ORDER BY id DESC`);
     res.json(rows);
   } catch (error) {
     console.error("Erreur lors de la récupération des articles :", error);
@@ -51,7 +52,7 @@ exports.createArticle = async (req, res) => {
     res.status(201).json({ message: "Article créé avec succès", id: result.insertId });
   } catch (error) {
     console.error("Erreur lors de la création de l'article :", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Erreur serveur lors de la création de l'article." });
   }
 };
 // 3. Modifier un article / tuto

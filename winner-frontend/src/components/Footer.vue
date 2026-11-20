@@ -5,7 +5,7 @@
               <h3>Contactez-nous</h3>
               <p>📍 1 Avenue Colonel mondjiba, Ngaliema, Kinshasa - RD CONGO</p>
               <p>📞 Téléphone : +243 89 922 78 78</p>
-              <p>✉️ Email : mavinga1@gmail.com</p>
+              <p>✉️ Pour nous écrire, utilisez le formulaire de contact.</p>
               <br>
               <p><strong>Horaires d'ouverture :</strong></p>
               <p>Lundi au Dimanche : 24H/24</p>

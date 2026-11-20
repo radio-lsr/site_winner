@@ -159,11 +159,7 @@ import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`
 
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // --- DONNÉES ---
 const produits = ref([])

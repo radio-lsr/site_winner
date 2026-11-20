@@ -142,11 +142,7 @@ const BACKEND_URL = API_BASE_URL
 const API_URL = `${API_ROOT}/articles`
 
 // Injection du token JWT d'authentification
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // --- DONNÉES ---
 const articles = ref([])

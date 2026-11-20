@@ -48,11 +48,7 @@ const BACKEND_URL = API_BASE_URL
 const API_URL = `${API_ROOT}/galerie`
 
 // CORRECTION : Fonction pour inclure le token JWT dans les requêtes sécurisées
-const getAuthHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // --- DONNÉES RÉACTIVES ---
 const fileInputRef = ref(null)

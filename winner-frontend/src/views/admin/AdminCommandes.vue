@@ -145,9 +145,7 @@ import { API_URL } from '@/services/config'
 import { syncCommandesEnAttente } from '@/services/notifications'
 
 // Injection du token JWT (les routes commandes exigent le rôle Admin)
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-})
+const getAuthHeaders = () => ({ withCredentials: true })
 
 // --- ÉTATS GLOBAUX ---
 const commandes = ref([])

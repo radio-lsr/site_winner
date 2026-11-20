@@ -1,24 +1,25 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
-/**
- * Middleware d'authentification "douce" :
- * - Si un token JWT valide est présent, il est décodé dans req.user.
- * - Sinon, la requête passe quand même (req.user reste undefined).
- *
- * Utilisé pour les routes publiques qui renvoient plus de données
- * à un administrateur connecté (ex: liste des produits / articles).
- */
-module.exports = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Format : Bearer TOKEN
-
-  if (token) {
-    try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      // Token invalide ou expiré : on continue simplement sans utilisateur
-      req.user = undefined;
+// Authentification facultative pour les routes de lecture publiques qui
+// donnent plus de contenu à un administrateur connecté.
+module.exports = async (req, _res, next) => {
+  try {
+    const cookies = String(req.headers.cookie || '').split(';').map(part => part.trim());
+    const sessionCookie = cookies.find(part => part.startsWith('winner_session='));
+    const cookieToken = sessionCookie ? decodeURIComponent(sessionCookie.slice('winner_session='.length)) : '';
+    const token = cookieToken;
+    if (token) {
+      const claims = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      const [rows] = await db.query('SELECT id, email, role, statut, token_version FROM users WHERE id = ?', [claims.id]);
+      const user = rows[0];
+      if (user && user.statut === 'Actif' && Number(claims.ver || 0) === Number(user.token_version || 0)) {
+        req.user = { id: user.id, email: user.email, role: user.role };
+      }
     }
+  } catch {
+    // Pour cette route publique, un cookie invalide donne les mêmes données qu'un visiteur anonyme.
+    req.user = undefined;
   }
-  next();
+  return next();
 };

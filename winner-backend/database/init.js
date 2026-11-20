@@ -35,14 +35,21 @@ const path = require('path');
 
   let conn;
   try {
+    if (!process.env.DB_NAME || !process.env.DB_USER || !process.env.DB_PASSWORD || process.env.DB_USER.toLowerCase() === 'root') {
+      throw new Error('DB_NAME, DB_USER dédié (non-root) et DB_PASSWORD sont obligatoires.');
+    }
     conn = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       multipleStatements: true
     });
 
-    await conn.query(sql);
+    // La base doit être créée par le serveur MySQL; l'application n'a besoin
+    // que des droits sur cette base, jamais de privilèges CREATE DATABASE globaux.
+    const schemaForAppUser = sql.replace(/CREATE DATABASE IF NOT EXISTS[^;]*;\s*/i, '').replace(/USE\s+[^;]+;\s*/i, '');
+    await conn.query(schemaForAppUser);
     console.log('✅ Base "winner_db" et toutes les tables créées avec succès.');
     process.exit(0);
   } catch (err) {
