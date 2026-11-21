@@ -172,7 +172,13 @@ const confirmerCommande = async (formData) => {
         notify('Votre commande a été envoyée avec succès !', 'success');
     } catch (error) {
         console.error("Erreur lors de l'envoi de la commande :", error);
-        notify("Impossible d'enregistrer la commande. Votre panier est conservé : vous pouvez réessayer ou nous contacter par téléphone.", 'error');
+        const detail = error.response?.data?.error;
+        notify(
+            detail
+                ? `Impossible d'enregistrer la commande : ${detail} Votre panier est conservé.`
+                : "Impossible d'enregistrer la commande. Votre panier est conservé : vous pouvez réessayer ou nous contacter par téléphone.",
+            'error'
+        );
     } finally {
         // Comme pour l'ajout au panier, on revient à la page des produits.
         commandeReussie.value = false;
