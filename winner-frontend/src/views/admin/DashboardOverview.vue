@@ -85,7 +85,7 @@
                 <td class="fw-bold">#{{ order.id }}</td>
                 <td>{{ order.customer_name }}</td>
                 <td>{{ formatDate(order.created_at) }}</td>
-                <td>{{ order.total }} $</td>
+                <td>{{ formatPrix(order.total) }}</td>
                 <td>
                   <span :class="['badge', getStatusClass(order.status)]">
                     {{ order.status }}
@@ -123,7 +123,7 @@
                 </td>
                 <td>{{ product.category }}</td>
                 <td><span class="sales-pill">{{ product.total_sales }} vtes</span></td>
-                <td class="text-green fw-bold">{{ product.revenue }} $</td>
+                <td class="text-green fw-bold">{{ formatPrix(product.revenue) }}</td>
               </tr>
             </tbody>
           </table>
@@ -137,6 +137,7 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { API_URL as API_ROOT } from '@/services/config'
+import { formatPrix } from '@/services/currency'
 
 // Définition des statistiques dynamiques
 const stats = ref([
@@ -146,7 +147,7 @@ const stats = ref([
   { label: 'Clients inscrits', value: 0, icon: '👥', bg: 'bg-purple' },
   { label: 'Photos Galerie', value: 0, icon: '🖼️', bg: 'bg-red' },
   { label: 'Vidéos publiées', value: 0, icon: '📺', bg: 'bg-teal' },
-  { label: 'Ventes ce mois', value: '0 $', icon: '💰', bg: 'bg-orange' },
+  { label: 'Ventes ce mois', value: '0 CDF', icon: '💰', bg: 'bg-orange' },
   { label: 'Visites du site', value: 0, icon: '📈', bg: 'bg-light-green' },
 ])
 
@@ -185,14 +186,14 @@ const fetchDashboardData = async () => {
     stats.value[3].value = data.users || 0         // Utilisateurs (Clients)
     stats.value[4].value = data.photos || 0        // Photos (Backend à venir)
     stats.value[5].value = data.videos || 0        // Vidéos (Backend à venir)
-    stats.value[6].value = `${data.monthlySalesAmount || 0} $` 
+    stats.value[6].value = formatPrix(data.monthlySalesAmount || 0)
     stats.value[7].value = data.visits || 0
 
     // 2. Mise à jour des graphiques de ventes mensuelles avec vérification
     if (data.monthlySales && Array.isArray(data.monthlySales)) {
       monthlySales.value = data.monthlySales.map(item => ({
         month: item.month,
-        amount: `${item.amount} $`,
+        amount: formatPrix(item.amount),
         height: `${item.percentage}%` 
       }))
     } else {

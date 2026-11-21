@@ -52,8 +52,8 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Prix ($)</label>
-              <input v-model="formProduit.prix" type="number" step="0.01" min="0" required placeholder="0.00" :disabled="isLoading" />
+              <label>Prix (CDF)</label>
+              <input v-model="formProduit.prix" type="number" step="1" min="0" required placeholder="Ex: 45000" :disabled="isLoading" />
             </div>
             
             <div v-if="formProduit.enSolde" class="form-group fade-in">
@@ -110,8 +110,8 @@
           
           <td>
             <div class="price-container">
-              <span v-if="produit.discount > 0" class="old-price">{{ Number(produit.prix).toFixed(2) }} $</span>
-              <span class="current-price">{{ calculerPrixRemise(produit.prix, produit.discount).toFixed(2) }} $</span>
+              <span v-if="produit.discount > 0" class="old-price">{{ formatPrix(produit.prix) }}</span>
+              <span class="current-price">{{ formatPrix(calculerPrixRemise(produit.prix, produit.discount)) }}</span>
             </div>
           </td>
           
@@ -155,6 +155,7 @@ import axios from 'axios'
 
 // --- CONFIGURATION API ---
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+import { formatPrix } from '@/services/currency'
 
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`

@@ -15,10 +15,10 @@
               </p>
               <!-- Prix en promotion : ancien prix barré + nouveau prix -->
               <div v-if="enPromo(produit)" class="prix-promo">
-                  <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }} $</span>
-                  <span class="prix-actuel">{{ formatPrix(produit.prix) }} $</span>
+                  <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }}</span>
+                  <span class="prix-actuel">{{ formatPrix(produit.prix) }}</span>
               </div>
-              <p v-else class="prix">{{ produit.prix }} $</p>
+              <p v-else class="prix">{{ formatPrix(produit.prix) }}</p>
               <button class="btn-sm">Voir les détails</button>
           </div>
       </div>
@@ -26,6 +26,8 @@
 </template>
 
 <script setup>
+import { formatPrix } from '../services/currency';
+
 defineProps({
     listeProduits: {
         type: Array,
@@ -36,8 +38,6 @@ defineEmits(['select-product']);
 
 // Un produit est en promotion s'il a un prix d'origine barré
 const enPromo = (produit) => Boolean(produit && produit.prixOriginal && produit.prixOriginal > produit.prix);
-
-const formatPrix = (v) => Number(v).toFixed(2);
 </script>
 
 <style scoped>

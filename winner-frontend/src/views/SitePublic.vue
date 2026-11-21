@@ -71,10 +71,10 @@ import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
 
 const listeProduits = ref([
-    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
-    { id: 2, nom: "Liquide de Refroidissement", prix: 15, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
-    { id: 3, nom: "Nettoyant Injecteur", prix: 12, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
-    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
+    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
+    { id: 2, nom: "Liquide de Refroidissement", prix: 15000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
+    { id: 3, nom: "Nettoyant Injecteur", prix: 12000, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
+    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
 ]);
 
 const listeGalerie = ref([

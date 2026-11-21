@@ -30,7 +30,7 @@
             <div class="info-item">
               <span class="label">Montant total :</span>
               <!-- Vérification de sécurité avec ?. au cas où le montant ne serait pas encore chargé en nombre -->
-              <strong class="price">{{ Number(commandeSelectionnee.montant).toFixed(2) }} $</strong>
+              <strong class="price">{{ formatPrix(commandeSelectionnee.montant) }}</strong>
             </div>
             <div class="info-item">
               <span class="label">Date :</span>
@@ -111,7 +111,7 @@
             </div>
           </td>
           <td class="address-cell">{{ cmd.adresse }}</td>
-          <td><strong>{{ Number(cmd.montant).toFixed(2) }} $</strong></td>
+          <td><strong>{{ formatPrix(cmd.montant) }}</strong></td>
           <td>
             <span v-if="cmd.livreur" class="driver-badge">🛵 {{ cmd.livreur }}</span>
             <span v-else class="text-muted">Non assigné</span>
@@ -143,6 +143,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios' // Ajout d'Axios pour les requêtes HTTP
 import { API_URL } from '@/services/config'
 import { syncCommandesEnAttente } from '@/services/notifications'
+import { formatPrix } from '@/services/currency'
 
 // Injection du token JWT (les routes commandes exigent le rôle Admin)
 const getAuthHeaders = () => ({ withCredentials: true })

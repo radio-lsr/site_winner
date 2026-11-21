@@ -6,7 +6,7 @@
               <img :src="produit.image" :alt="produit.nom" class="modal-img">
               <div class="modal-info">
                   <h2>{{ produit.nom }}</h2>
-                  <p class="prix-modal">{{ produit.prix }} $</p>
+                  <p class="prix-modal">{{ formatPrix(produit.prix) }}</p>
                   <p class="specs">{{ produit.specs }}</p>
                   
                   <div class="commande-action">
@@ -22,6 +22,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { formatPrix } from '../services/currency';
 
 const props = defineProps({
     produit: {
