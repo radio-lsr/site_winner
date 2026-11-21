@@ -136,6 +136,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 // --- CONFIGURATION API ---
 const BACKEND_URL = API_BASE_URL
@@ -286,20 +287,25 @@ const soumettreArticle = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la sauvegarde :", error)
-    alert("Une erreur est survenue lors de l'enregistrement.")
+    notify("Une erreur est survenue lors de l'enregistrement.")
   } finally {
     isLoading.value = false
   }
 }
 
 const supprimerArticle = async (id) => {
-  if (confirm("Voulez-vous vraiment supprimer ce contenu ?")) {
+  if (await demanderConfirmation({
+    titre: 'Supprimer ce contenu ?',
+    message: 'Cette action est définitive.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  })) {
     try {
       await axios.delete(`${API_URL}/${id}`, getAuthHeaders())
       articles.value = articles.value.filter(a => a.id !== id)
     } catch (error) {
       console.error("Erreur lors de la suppression :", error)
-      alert("Impossible de supprimer cet article.")
+      notify("Impossible de supprimer cet article.")
     }
   }
 }

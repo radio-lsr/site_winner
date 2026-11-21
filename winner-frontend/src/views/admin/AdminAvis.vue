@@ -81,6 +81,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const getAuthHeaders = () => ({ withCredentials: true })
 
@@ -116,24 +117,34 @@ const toutCharger = async () => {
 onMounted(toutCharger)
 
 const supprimerAvis = async (id) => {
-  if (!confirm('Supprimer cet avis ?')) return
+  if (!(await demanderConfirmation({
+    titre: 'Supprimer cet avis ?',
+    message: 'Cet avis sera définitivement supprimé.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  }))) return
   try {
     await axios.delete(`${API_URL}/avis/${id}`, getAuthHeaders())
     avis.value = avis.value.filter(a => a.id !== id)
   } catch (error) {
     console.error('Erreur lors de la suppression :', error)
-    alert('Impossible de supprimer cet avis.')
+    notify('Impossible de supprimer cet avis.')
   }
 }
 
 const supprimerCommentaire = async (id) => {
-  if (!confirm('Supprimer ce commentaire ?')) return
+  if (!(await demanderConfirmation({
+    titre: 'Supprimer ce commentaire ?',
+    message: 'Ce commentaire sera définitivement supprimé.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  }))) return
   try {
     await axios.delete(`${API_URL}/commentaires/${id}`, getAuthHeaders())
     commentaires.value = commentaires.value.filter(c => c.id !== id)
   } catch (error) {
     console.error('Erreur lors de la suppression :', error)
-    alert('Impossible de supprimer ce commentaire.')
+    notify('Impossible de supprimer ce commentaire.')
   }
 }
 

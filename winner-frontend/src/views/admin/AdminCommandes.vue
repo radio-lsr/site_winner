@@ -144,6 +144,7 @@ import axios from 'axios' // Ajout d'Axios pour les requêtes HTTP
 import { API_URL } from '@/services/config'
 import { syncCommandesEnAttente } from '@/services/notifications'
 import { formatPrix } from '@/services/currency'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 // Injection du token JWT (les routes commandes exigent le rôle Admin)
 const getAuthHeaders = () => ({ withCredentials: true })
@@ -199,7 +200,7 @@ const sauvegarderCommande = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la mise à jour :", error)
-    alert("Une erreur est survenue lors de la sauvegarde.")
+    notify("Une erreur est survenue lors de la sauvegarde.")
   } finally {
     isLoading.value = false
   }
@@ -207,7 +208,12 @@ const sauvegarderCommande = async () => {
 
 // 3. Annuler une commande directement depuis le tableau
 const annulerCommande = async (id) => {
-  if (confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
+  if (await demanderConfirmation({
+    titre: 'Annuler cette commande ?',
+    message: 'La commande passera au statut Annulée.',
+    labelConfirmer: 'Annuler la commande',
+    dangereux: true
+  })) {
     try {
       // Appel PUT pour changer uniquement le statut (authentifié)
       await axios.put(`${API_COMMANDES}/${id}`, { statut: 'Annulée' }, getAuthHeaders())
@@ -220,7 +226,7 @@ const annulerCommande = async (id) => {
       syncCommandesEnAttente(commandes.value)
     } catch (error) {
       console.error("Erreur lors de l'annulation :", error)
-      alert("Impossible d'annuler la commande.")
+      notify("Impossible d'annuler la commande.")
     }
   }
 }
@@ -267,7 +273,12 @@ const fermerModal = () => {
 }
 
 const annulerDepuisModale = async () => {
-  if (confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
+  if (await demanderConfirmation({
+    titre: 'Annuler cette commande ?',
+    message: 'La commande passera au statut Annulée.',
+    labelConfirmer: 'Annuler la commande',
+    dangereux: true
+  })) {
     formCommande.value.statut = 'Annulée'
     await sauvegarderCommande() // Réutilise la fonction d'API existante
   }

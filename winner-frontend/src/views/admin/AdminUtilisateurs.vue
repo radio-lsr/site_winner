@@ -168,6 +168,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 // --- CONFIGURATION API ---
 const API_URL = `${API_ROOT}/user`
@@ -213,7 +214,7 @@ const fetchUtilisateurs = async () => {
   } catch (error) {
     console.error("Erreur lors de la récupération des utilisateurs :", error)
     if (error.response?.status === 401) {
-      alert("Votre session a expiré. Veuillez vous reconnecter.")
+      notify("Votre session a expiré. Veuillez vous reconnecter.")
     }
   } finally {
     isLoading.value = false
@@ -309,14 +310,19 @@ const soumettreUtilisateur = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la soumission :", error)
-    alert(error.response?.data?.message || "Une erreur est survenue lors de l'enregistrement.")
+    notify(error.response?.data?.message || "Une erreur est survenue lors de l'enregistrement.")
   } finally {
     isLoading.value = false
   }
 }
 
 const supprimerUtilisateur = async (id) => {
-  if (confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) {
+  if (await demanderConfirmation({
+    titre: 'Supprimer cet utilisateur ?',
+    message: 'Cette action est définitive.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  })) {
     isLoading.value = true
     try {
       await axios.delete(`${API_URL}/${id}`, getConfig())
@@ -324,7 +330,7 @@ const supprimerUtilisateur = async (id) => {
       afficherNotification("Utilisateur supprimé avec succès.")
     } catch (error) {
       console.error("Erreur lors de la suppression :", error)
-      alert("Impossible de supprimer cet utilisateur.")
+      notify("Impossible de supprimer cet utilisateur.")
     } finally {
       isLoading.value = false
     }

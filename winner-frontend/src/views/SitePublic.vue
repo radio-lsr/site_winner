@@ -57,6 +57,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { API_URL, formatImageUrl } from '../services/config';
+import { notify } from '../services/dialog';
 
 import Header from '../components/Header.vue';
 import Hero from '../components/Hero.vue';
@@ -167,17 +168,16 @@ const confirmerCommande = async (formData) => {
                 quantite: item.quantite
             }))
         });
-        commandeReussie.value = true;
+        panier.value = [];
+        notify('Votre commande a été envoyée avec succès !', 'success');
     } catch (error) {
         console.error("Erreur lors de l'envoi de la commande :", error);
-        alert("Impossible d'enregistrer la commande. Veuillez réessayer ou nous contacter par téléphone.");
-        return;
-    }
-    setTimeout(() => {
-        panier.value = [];
+        notify("Impossible d'enregistrer la commande. Votre panier est conservé : vous pouvez réessayer ou nous contacter par téléphone.", 'error');
+    } finally {
+        // Comme pour l'ajout au panier, on revient à la page des produits.
         commandeReussie.value = false;
         afficherPanierModal.value = false;
-    }, 3500);
+    }
 };
 
 // ============================================================

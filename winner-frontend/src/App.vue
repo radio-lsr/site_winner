@@ -1,9 +1,14 @@
 <template>
   <!-- Le routeur injecte dynamiquement soit SitePublic.vue, soit AdminDashboard.vue -->
   <router-view />
+
+  <!-- Dialogues et notifications stylés, partagés par tout le site -->
+  <DialogHost />
 </template>
 
 <script setup>
+import DialogHost from './components/DialogHost.vue'
+
 // App.vue ne contient plus la logique métier ni les listes en dur. 
 // Tout est désormais modulaire et géré dans les vues et composants dédiés.
 </script>

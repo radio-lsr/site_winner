@@ -35,6 +35,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL, formatImageUrl } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const HERO_URL = `${API_URL}/hero`
 
@@ -75,20 +76,25 @@ const publierImage = async (event) => {
     await fetchImages()
     setTimeout(() => { message.value = '' }, 4000)
   } catch (error) {
-    alert(error.response?.data?.error || 'Impossible de publier cette image.')
+    notify(error.response?.data?.error || 'Impossible de publier cette image.')
   } finally {
     envoiEnCours.value = false
   }
 }
 
 const supprimerImage = async (id) => {
-  if (!confirm('Retirer cette image de la bannière d\'accueil ?')) return
+  if (!(await demanderConfirmation({
+    titre: 'Retirer cette image ?',
+    message: "L'image ne sera plus affichée dans la bannière d'accueil.",
+    labelConfirmer: "Retirer l'image",
+    dangereux: true
+  }))) return
   try {
     await axios.delete(`${HERO_URL}/${id}`, getAuthHeaders())
     images.value = images.value.filter(i => i.id !== id)
   } catch (error) {
     console.error('Erreur lors de la suppression :', error)
-    alert('Impossible de supprimer cette image.')
+    notify('Impossible de supprimer cette image.')
   }
 }
 </script>

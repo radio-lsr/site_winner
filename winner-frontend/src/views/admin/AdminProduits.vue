@@ -156,6 +156,7 @@ import axios from 'axios'
 // --- CONFIGURATION API ---
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
 import { formatPrix } from '@/services/currency'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`
@@ -267,7 +268,7 @@ const soumettreProduit = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la sauvegarde :", error)
-    alert("Une erreur est survenue lors de l'enregistrement.")
+    notify("Une erreur est survenue lors de l'enregistrement.")
   } finally {
     isLoading.value = false
   }
@@ -275,13 +276,18 @@ const soumettreProduit = async () => {
 
 // --- SUPPRESSION API ---
 const supprimerProduit = async (id) => {
-  if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
+  if (await demanderConfirmation({
+    titre: 'Supprimer ce produit ?',
+    message: 'Le produit sera retiré définitivement de la boutique.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  })) {
     try {
       await axios.delete(`${API_URL}/${id}`, getAuthHeaders())
       produits.value = produits.value.filter(p => p.id !== id)
     } catch (error) {
       console.error("Erreur lors de la suppression :", error)
-      alert("Impossible de supprimer le produit.")
+      notify("Impossible de supprimer le produit.")
     }
   }
 }
@@ -296,7 +302,7 @@ const toggleDisponibilite = async (produit) => {
   } catch (error) {
     console.error("Erreur lors de la mise à jour de disponibilité :", error)
     produit.disponible = ancienneValeur
-    alert("Impossible de modifier la disponibilité.")
+    notify("Impossible de modifier la disponibilité.")
   }
 }
 

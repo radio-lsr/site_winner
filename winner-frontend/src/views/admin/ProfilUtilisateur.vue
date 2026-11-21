@@ -128,6 +128,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL, formatImageUrl } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 // --- CONFIGURATION API ---
 // Routes réelles du backend : /api/user/profile, /api/user/password, /api/user/avatar
@@ -191,7 +192,7 @@ const gererUploadAvatar = async (event) => {
     afficherNotification('Avatar mis à jour avec succès !')
   } catch (error) {
     console.error("Erreur lors de l'upload de l'avatar :", error)
-    alert("Impossible de mettre à jour la photo de profil.")
+    notify("Impossible de mettre à jour la photo de profil.")
   } finally {
     isLoading.value = false
     event.target.value = ''
@@ -206,7 +207,7 @@ const sauvegarderProfil = async () => {
     afficherNotification('Profil mis à jour avec succès !')
   } catch (error) {
     console.error("Erreur lors de la mise à jour du profil :", error)
-    alert("Une erreur est survenue lors de l'enregistrement.")
+    notify("Une erreur est survenue lors de l'enregistrement.")
   } finally {
     isLoading.value = false
   }
@@ -215,7 +216,7 @@ const sauvegarderProfil = async () => {
 // 4. Modifier le mot de passe (PUT)
 const modifierMotDePasse = async () => {
   if (passwordForm.value.nouveau !== passwordForm.value.confirmation) {
-    alert('Les nouveaux mots de passe ne correspondent pas.')
+    notify('Les nouveaux mots de passe ne correspondent pas.')
     return
   }
 
@@ -229,7 +230,7 @@ const modifierMotDePasse = async () => {
     passwordForm.value = { actuel: '', nouveau: '', confirmation: '' }
   } catch (error) {
     console.error("Erreur lors du changement de mot de passe :", error)
-    alert(error.response?.data?.error || error.response?.data?.message || 'Mot de passe actuel incorrect ou erreur serveur.')
+    notify(error.response?.data?.error || error.response?.data?.message || 'Mot de passe actuel incorrect ou erreur serveur.')
   } finally {
     isLoading.value = false
   }

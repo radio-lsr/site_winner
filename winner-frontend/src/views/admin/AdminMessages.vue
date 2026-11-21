@@ -115,6 +115,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL } from '@/services/config'
 import { syncMessagesNonLus } from '@/services/notifications'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const MESSAGES_URL = `${API_URL}/messages`
 
@@ -162,7 +163,12 @@ const marquer = async (msg, lu) => {
 }
 
 const supprimerMessage = async (id) => {
-  if (!confirm('Supprimer définitivement ce message ?')) return
+  if (!(await demanderConfirmation({
+    titre: 'Supprimer ce message ?',
+    message: 'Ce message sera supprimé définitivement.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  }))) return
   try {
     await axios.delete(`${MESSAGES_URL}/${id}`, getAuthHeaders())
     messages.value = messages.value.filter(m => m.id !== id)
@@ -170,7 +176,7 @@ const supprimerMessage = async (id) => {
     if (messageSelectionne.value?.id === id) messageSelectionne.value = null
   } catch (error) {
     console.error('Erreur lors de la suppression :', error)
-    alert('Impossible de supprimer le message.')
+    notify('Impossible de supprimer le message.')
   }
 }
 
