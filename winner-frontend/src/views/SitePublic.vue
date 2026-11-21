@@ -141,8 +141,9 @@ const ajouterAuPanier = (articleAvecQuantite) => {
     } else {
         panier.value.push({ ...articleAvecQuantite });
     }
+    // On revient à la page des produits : la fiche se ferme et le panier
+    // n'est pas ouvert automatiquement (bouton « Panier » dans l'en-tête).
     fermerDetailsProduit();
-    afficherPanierModal.value = true;
 };
 
 const supprimerDuPanier = (index) => {
