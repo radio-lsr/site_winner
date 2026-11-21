@@ -36,7 +36,14 @@ app.set('trust proxy', trustedProxyHops);
 app.disable('x-powered-by');
 app.use(helmet({
   contentSecurityPolicy: false, // CSP du frontend est gérée par le serveur web public.
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  // En production, le site (ex: https://winnermutiservice.com) et l'API
+  // (https://api.winnermutiservice.com) sont sur des origines différentes.
+  // Helmet applique par défaut Cross-Origin-Resource-Policy: same-origin,
+  // ce qui fait bloquer les <img> des produits/galerie par le navigateur
+  // (ERR_BLOCKED_BY_RESPONSE.NotSameOrigin) même si l'upload a réussi.
+  // Ces médias sont publics : on autorise le chargement cross-origin.
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean);
 app.use(cors({
