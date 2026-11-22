@@ -109,6 +109,7 @@ exports.getStats = async (req, res) => {
       videos: totalVideos,
       monthlySalesAmount,
       monthlySales,
+      dailySales: req._dailySales || [],
       recentOrders,
       visits: 0,
       serverStatus: 'Online',

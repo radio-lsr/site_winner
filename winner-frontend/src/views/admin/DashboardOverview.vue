@@ -27,13 +27,24 @@
     <!-- Section Graphiques (réservée à l'administrateur) -->
     <div v-if="estAdmin" class="charts-section">
       <div class="chart-card">
-        <h3>Évolution des Ventes (2026)</h3>
+        <div class="chart-header">
+          <h3>Évolution des Ventes ({{ periodeCourbe === 'annuelle' ? '2026' : 'Ce mois' }})</h3>
+          <div class="chart-tabs">
+            <button :class="['chart-tab', periodeCourbe === 'mensuelle' && 'active']" @click="periodeCourbe = 'mensuelle'">Mensuelle</button>
+            <button :class="['chart-tab', periodeCourbe === 'annuelle' && 'active']" @click="periodeCourbe = 'annuelle'">Annuelle</button>
+          </div>
+        </div>
         <div class="chart-placeholder">
-          <div v-if="monthlySales.length > 0" class="line-chart-wrap" @mouseleave="hoveredPoint = null">
-            <div v-if="hoveredPoint" class="chart-tooltip" :style="{ left: hoveredPoint.leftPct + '%', top: hoveredPoint.topPct + '%' }">
-              <strong>{{ hoveredPoint.month }}</strong> : {{ hoveredPoint.amount }}
+          <div v-if="activeSales.length > 0" class="line-chart-wrap" @mouseleave="hoveredPoint = null">
+            <div v-if="hoveredPoint" class="chart-tooltip" :style="{ left: hoveredPoint.leftPct + '%' }">
+              <strong>{{ periodeCourbe === 'mensuelle' ? 'Jour ' + hoveredPoint.month : hoveredPoint.month }}</strong> : {{ hoveredPoint.amount }}
             </div>
-            <svg viewBox="0 0 500 180" class="line-chart-svg" preserveAspectRatio="none">
+            <svg
+              viewBox="0 0 500 180"
+              class="line-chart-svg"
+              preserveAspectRatio="none"
+              @mousemove="onChartMouseMove"
+            >
               <defs>
                 <linearGradient id="salesAreaGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#f6a617" stop-opacity="0.35" />
@@ -64,22 +75,10 @@
                 stroke-linejoin="round"
                 style="filter: drop-shadow(0 3px 6px rgba(246, 166, 23, 0.35));"
               />
-              <!-- Zones invisibles de survol pour chaque mois -->
-              <rect
-                v-for="(pt, idx) in salesCoords"
-                :key="'hover-' + idx"
-                :x="pt.x - 40"
-                y="0"
-                width="80"
-                height="180"
-                fill="transparent"
-                style="cursor: pointer;"
-                @mouseenter="hoveredPoint = { ...pt, leftPct: (pt.x / 500) * 100, topPct: (pt.y / 180) * 100 }"
-              />
             </svg>
             <div class="line-chart-months">
-              <span v-for="(val, idx) in monthlySales" :key="idx" class="month" :title="val.amount">
-                {{ val.month }}
+              <span v-for="(val, idx) in activeSalesLabels" :key="idx" class="month">
+                {{ val }}
               </span>
             </div>
           </div>
@@ -211,6 +210,37 @@ const statsVisibles = computed(() =>
 )
 
 const monthlySales = ref([])
+const dailySales = ref([])
+const periodeCourbe = ref('annuelle')
+const hoveredPoint = ref(null)
+
+const activeSales = computed(() =>
+  periodeCourbe.value === 'mensuelle' ? dailySales.value : monthlySales.value
+)
+
+const activeSalesLabels = computed(() => {
+  const list = activeSales.value
+  if (periodeCourbe.value !== 'mensuelle') return list.map(i => i.month)
+  return list.filter((_, idx) => idx === 0 || idx === list.length - 1 || (idx + 1) % 5 === 0).map(i => i.month)
+})
+
+const onChartMouseMove = (event) => {
+  const pts = salesCoords.value
+  if (!pts.length) return
+  const rect = event.currentTarget.getBoundingClientRect()
+  const relX = ((event.clientX - rect.left) / rect.width) * 500
+  let closest = pts[0]
+  let minDist = Math.abs(relX - pts[0].x)
+  for (const pt of pts) {
+    const d = Math.abs(relX - pt.x)
+    if (d < minDist) {
+      minDist = d
+      closest = pt
+    }
+  }
+  const leftPct = Math.min(84, Math.max(16, (closest.x / 500) * 100))
+  hoveredPoint.value = { ...closest, leftPct }
+}
 const recentOrders = ref([])
 const topProducts = ref([])
 const totalVisitors = ref(0)
@@ -222,7 +252,7 @@ const trafficSources = ref([
 
 // Coordonnées SVG pour la courbe des ventes
 const salesCoords = computed(() => {
-  const items = monthlySales.value
+  const items = activeSales.value
   if (!items.length) return []
   const left = 25
   const right = 475
@@ -297,6 +327,16 @@ const fetchDashboardData = async () => {
       }))
     } else {
       monthlySales.value = [] // Sécurité
+    }
+
+    if (data.dailySales && Array.isArray(data.dailySales)) {
+      dailySales.value = data.dailySales.map(item => ({
+        month: item.month,
+        amount: formatPrix(item.amount),
+        percentage: item.percentage || 0
+      }))
+    } else {
+      dailySales.value = []
     }
 
     // 3. Mise à jour des tableaux avec des valeurs par défaut
@@ -589,7 +629,26 @@ onMounted(() => {
 .badge-warning { background-color: #fef3c7; color: #92400e; }
 .badge-danger { background-color: #ffe4e6; color: #991b1b; }
 .badge-secondary { background-color: #f3f4f6; color: #374151; }
-.line-chart-wrap { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.line-chart-wrap { position: relative; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.chart-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: #1f1443;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 5;
+}
+.chart-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.chart-header h3 { margin: 0; }
+.chart-tabs { display: flex; gap: 6px; background: #f1f5f9; padding: 3px; border-radius: 8px; }
+.chart-tab { border: none; background: transparent; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; }
+.chart-tab.active { background: #fff; color: #1f1443; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .line-chart-svg { width: 100%; height: 180px; display: block; }
 .line-chart-months { display: flex; justify-content: space-between; padding: 0 14px; font-size: 12px; color: #64748b; font-weight: 500; }
 </style>
