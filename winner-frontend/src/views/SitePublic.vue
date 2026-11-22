@@ -164,9 +164,11 @@ const supprimerDuPanier = (index) => {
 const confirmerCommande = async (formData) => {
     // Envoi réel de la commande au backend (route publique POST /api/commandes)
     try {
-        await axios.post(`${API_URL}/commandes`, {
+        const { data } = await axios.post(`${API_URL}/commandes`, {
             nom: formData.nom,
             telephone: formData.telephone,
+            email: formData.email,
+            modeRetrait: formData.modeRetrait,
             adresse: formData.adresse,
             dateLivraison: formData.date || null,
             articles: panier.value.map(item => ({
@@ -177,7 +179,7 @@ const confirmerCommande = async (formData) => {
             }))
         });
         panier.value = [];
-        notify('Votre commande a été envoyée avec succès !', 'success');
+        notify(data?.message || 'Votre commande a été envoyée avec succès !', 'success');
     } catch (error) {
         console.error("Erreur lors de l'envoi de la commande :", error);
         const detail = error.response?.data?.error;
