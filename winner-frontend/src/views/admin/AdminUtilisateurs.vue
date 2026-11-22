@@ -76,7 +76,6 @@
             <div class="form-group">
               <label>Rôle</label>
               <select v-model="formUtilisateur.role" :disabled="isLoading">
-                <option value="Utilisateur">Utilisateur</option>
                 <option value="Modérateur">Modérateur</option>
               </select>
             </div>
@@ -199,7 +198,7 @@ const isLoading = ref(false)
 const formUtilisateur = ref({
   nom: '',
   email: '',
-  role: 'Utilisateur',
+  role: 'Modérateur',
   statut: 'Actif',
   password: '',
   doitChangerMotDePasse: true,
@@ -254,7 +253,7 @@ const ouvrirModalAjout = () => {
   formUtilisateur.value = { 
     nom: '', 
     email: '', 
-    role: 'Utilisateur', 
+    role: 'Modérateur',
     statut: 'Actif', 
     password: '', 
     doitChangerMotDePasse: true,

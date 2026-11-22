@@ -156,11 +156,11 @@ exports.getAllUsers = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const { nom, email, role, statut, password, doitChangerMotDePasse } = req.body || {};
-    const roles = ['Admin', 'Utilisateur'];
+    const roles = ['Admin', 'Modérateur'];
     const statuts = ['Actif', 'Inactif'];
     const nomClean = String(nom || '').trim();
     const emailClean = String(email || '').trim().toLowerCase();
-    const roleClean = role || 'Utilisateur';
+    const roleClean = role || 'Modérateur';
     const statutClean = statut || 'Actif';
     if (!nomClean || nomClean.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailClean)) return res.status(400).json({ message: 'Nom ou adresse email invalide.' });
     if (!roles.includes(roleClean) || !statuts.includes(statutClean)) return res.status(400).json({ message: 'Rôle ou statut invalide.' });
@@ -187,7 +187,7 @@ exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { nom, email, role, statut, password, doitChangerMotDePasse } = req.body || {};
-    const roles = ['Admin', 'Utilisateur'];
+    const roles = ['Admin', 'Modérateur'];
     const statuts = ['Actif', 'Inactif'];
     if (!String(nom || '').trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || '').trim())) return res.status(400).json({ message: 'Nom ou email invalide.' });
     if (!roles.includes(role) || !statuts.includes(statut)) return res.status(400).json({ message: 'Rôle ou statut invalide.' });

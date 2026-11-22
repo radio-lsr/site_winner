@@ -220,6 +220,17 @@ onUnmounted(() => {
 
 const titrePage = computed(() => route.meta.title || 'Tableau de bord');
 
+// Rôle du membre du personnel connecté : détermine les entrées de menu visibles.
+// Le modérateur ne voit que son périmètre (produits, commandes, articles, avis & commentaires).
+const roleConnecte = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role || adminInfo.value.role || '';
+  } catch {
+    return adminInfo.value.role || '';
+  }
+});
+const estAdmin = computed(() => roleConnecte.value === 'Admin');
+
 const deconnexion = async () => {
   isLoading.value = true;
   try {

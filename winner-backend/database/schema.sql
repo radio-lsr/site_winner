@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   prenom VARCHAR(150) DEFAULT '',
   email VARCHAR(190) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('Admin', 'Utilisateur') NOT NULL DEFAULT 'Utilisateur',
+  role ENUM('Admin', 'Modérateur') NOT NULL DEFAULT 'Modérateur',
   statut ENUM('Actif', 'Inactif') NOT NULL DEFAULT 'Actif',
   telephone VARCHAR(50) DEFAULT '',
   bio TEXT,

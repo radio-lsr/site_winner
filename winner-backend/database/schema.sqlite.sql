@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   prenom TEXT DEFAULT '',
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'Utilisateur' CHECK (role IN ('Admin', 'Utilisateur')),
+  role TEXT NOT NULL DEFAULT 'Modérateur' CHECK (role IN ('Admin', 'Modérateur')),
   statut TEXT NOT NULL DEFAULT 'Actif',
   telephone TEXT DEFAULT '',
   bio TEXT,

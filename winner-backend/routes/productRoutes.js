@@ -8,7 +8,8 @@ const { safeUpload, IMAGE_TYPES } = require('../middleware/safeUpload');
 const uploadImage = safeUpload({ fields: { image: IMAGE_TYPES }, maxFiles: 1, maxTotalSize: 10 * 1024 * 1024 });
 
 // Lecture : publique (uniquement les produits actifs pour les visiteurs),
-// un admin connecté voit tout.
+// un membre du personnel connecté (admin ou modérateur) voit tout.
+// Le modérateur consulte les produits en lecture seule.
 router.get('/', optionalAuth, productController.getAllProducts);
 
 // Écriture : réservée aux administrateurs authentifiés

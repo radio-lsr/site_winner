@@ -18,7 +18,7 @@ exports.login = async (req, res) => {
     if (!user || user.statut !== 'Actif' || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect.' });
     }
-    const role = user.role || 'Utilisateur';
+    const role = user.role || 'Modérateur';
     const token = jwt.sign({ id: user.id, email: user.email, role, ver: Number(user.token_version || 0) }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
     res.cookie('winner_session', token, {
       httpOnly: true,

@@ -5,9 +5,9 @@
       <button class="btn-refresh" @click="toutCharger" :disabled="isLoading">🔄 Actualiser</button>
     </div>
 
-    <!-- Onglets -->
+    <!-- Onglets (le modérateur ne voit que l'onglet commentaires) -->
     <div class="tabs">
-      <button :class="['tab', onglet === 'avis' && 'active']" @click="onglet = 'avis'">
+      <button v-if="estAdmin" :class="['tab', onglet === 'avis' && 'active']" @click="onglet = 'avis'">
         ⭐ Avis produits ({{ avis.length }})
       </button>
       <button :class="['tab', onglet === 'commentaires' && 'active']" @click="onglet = 'commentaires'">
@@ -78,14 +78,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { API_URL } from '@/services/config'
 import { notify, demanderConfirmation } from '@/services/dialog'
 
 const getAuthHeaders = () => ({ withCredentials: true })
 
-const onglet = ref('avis')
+// Le modérateur modère les commentaires d'articles ; les avis produits restent réservés à l'admin.
+const estAdmin = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role === 'Admin';
+  } catch {
+    return false;
+  }
+})
+
+const onglet = ref(estAdmin.value ? 'avis' : 'commentaires')
 const avis = ref([])
 const commentaires = ref([])
 const isLoading = ref(false)
@@ -110,7 +119,8 @@ const chargerCommentaires = async () => {
 
 const toutCharger = async () => {
   isLoading.value = true
-  await Promise.all([chargerAvis(), chargerCommentaires()])
+  // Le modérateur n'a pas accès aux avis produits : on ne charge que les commentaires.
+  await Promise.all(estAdmin.value ? [chargerAvis(), chargerCommentaires()] : [chargerCommentaires()])
   isLoading.value = false
 }
 
