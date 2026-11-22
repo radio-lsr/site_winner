@@ -40,21 +40,17 @@
               <line x1="20" y1="30" x2="480" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4" />
               <line x1="20" y1="90" x2="480" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
               <line x1="20" y1="150" x2="480" y2="150" stroke="#cbd5e1" />
-              <polygon v-if="salesAreaPoints" :points="salesAreaPoints" fill="url(#salesAreaGrad)" />
-              <polyline
-                v-if="salesLinePoints"
-                :points="salesLinePoints"
+              <path v-if="salesAreaPath" :d="salesAreaPath" fill="url(#salesAreaGrad)" />
+              <path
+                v-if="salesLinePath"
+                :d="salesLinePath"
                 fill="none"
                 stroke="#f6a617"
                 stroke-width="3.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                style="filter: drop-shadow(0 3px 6px rgba(246, 166, 23, 0.35));"
               />
-              <g v-for="(pt, idx) in salesCoords" :key="idx">
-                <circle :cx="pt.x" :cy="pt.y" r="5" fill="#fff" stroke="#f6a617" stroke-width="3">
-                  <title>{{ pt.month }} : {{ pt.amount }}</title>
-                </circle>
-              </g>
             </svg>
             <div class="line-chart-months">
               <span v-for="(val, idx) in monthlySales" :key="idx" class="month" :title="val.amount">
@@ -216,15 +212,26 @@ const salesCoords = computed(() => {
   })
 })
 
-const salesLinePoints = computed(() =>
-  salesCoords.value.map(p => `${p.x},${p.y}`).join(' ')
-)
+const salesLinePath = computed(() => {
+  const pts = salesCoords.value
+  if (!pts.length) return ''
+  if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`
+  let d = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i]
+    const p1 = pts[i + 1]
+    const cx = (p0.x + p1.x) / 2
+    d += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`
+  }
+  return d
+})
 
-const salesAreaPoints = computed(() => {
-  if (!salesCoords.value.length) return ''
-  const first = salesCoords.value[0]
-  const last = salesCoords.value[salesCoords.value.length - 1]
-  return `${first.x},150 ${salesLinePoints.value} ${last.x},150`
+const salesAreaPath = computed(() => {
+  const pts = salesCoords.value
+  if (!pts.length || !salesLinePath.value) return ''
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  return `${salesLinePath.value} L ${last.x} 150 L ${first.x} 150 Z`
 })
 
 // Calcul dynamique du dégradé pour le camembert (donut)
