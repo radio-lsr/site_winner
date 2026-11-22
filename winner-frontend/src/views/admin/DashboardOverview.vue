@@ -173,6 +173,34 @@ const trafficSources = ref([
   { label: 'Moteurs de recherche', percentage: 25, dotClass: 'bg-yellow' }
 ])
 
+// Coordonnées SVG pour la courbe des ventes
+const salesCoords = computed(() => {
+  const items = monthlySales.value
+  if (!items.length) return []
+  const left = 25
+  const right = 475
+  const top = 25
+  const bottom = 150
+  const spanX = items.length > 1 ? (right - left) / (items.length - 1) : 0
+  return items.map((item, idx) => {
+    const pct = Math.min(100, Math.max(0, Number(item.percentage) || 0))
+    const x = items.length > 1 ? left + idx * spanX : (left + right) / 2
+    const y = bottom - (pct / 100) * (bottom - top)
+    return { x: Math.round(x), y: Math.round(y), month: item.month, amount: item.amount }
+  })
+})
+
+const salesLinePoints = computed(() =>
+  salesCoords.value.map(p => `${p.x},${p.y}`).join(' ')
+)
+
+const salesAreaPoints = computed(() => {
+  if (!salesCoords.value.length) return ''
+  const first = salesCoords.value[0]
+  const last = salesCoords.value[salesCoords.value.length - 1]
+  return `${first.x},150 ${salesLinePoints.value} ${last.x},150`
+})
+
 // Calcul dynamique du dégradé pour le camembert (donut)
 const trafficConicGradient = computed(() => {
   let direct = trafficSources.value[0]?.percentage || 45
@@ -206,7 +234,8 @@ const fetchDashboardData = async () => {
       monthlySales.value = data.monthlySales.map(item => ({
         month: item.month,
         amount: formatPrix(item.amount),
-        height: `${item.percentage}%` 
+        percentage: item.percentage || 0,
+        height: `${item.percentage}%`
       }))
     } else {
       monthlySales.value = [] // Sécurité
@@ -502,4 +531,7 @@ onMounted(() => {
 .badge-warning { background-color: #fef3c7; color: #92400e; }
 .badge-danger { background-color: #ffe4e6; color: #991b1b; }
 .badge-secondary { background-color: #f3f4f6; color: #374151; }
+.line-chart-wrap { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.line-chart-svg { width: 100%; height: 180px; display: block; }
+.line-chart-months { display: flex; justify-content: space-between; padding: 0 14px; font-size: 12px; color: #64748b; font-weight: 500; }
 </style>
