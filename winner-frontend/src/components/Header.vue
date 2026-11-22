@@ -22,6 +22,16 @@
               <li><a href="#galerie">Galerie</a></li>
               <li><a href="#articles">Conseils</a></li>
               <li><a href="#apropos">À Propos</a></li>
+              <li class="header-search-item">
+                  <input
+                      v-model="termeRecherche"
+                      type="search"
+                      placeholder="🔍 Rechercher un produit..."
+                      class="header-search-input"
+                      @input="onSearchInput"
+                      @keydown.enter="allerAuxProduits"
+                  />
+              </li>
               <li>
                   <a href="#" @click.prevent="$emit('open-cart')" class="btn-panier">
                       🛒 Panier <span v-if="cartItemCount > 0" class="badge">{{ cartItemCount }}</span>
@@ -103,5 +113,18 @@ nav ul li a:hover { color: #E31E24; }
 .dropdown-menu li a:hover {
     background: #f8fafc;
     color: #1e3a8a;
+}
+.header-search-input {
+    padding: 7px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    font-size: 13px;
+    width: 190px;
+    outline: none;
+    transition: border-color 0.2s, width 0.2s;
+}
+.header-search-input:focus {
+    border-color: #1e3a8a;
+    width: 220px;
 }
 </style>

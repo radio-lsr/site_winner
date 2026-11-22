@@ -5,7 +5,8 @@
         :cartItemCount="panier.length"
         :categories="categoriesBoutique"
         @open-cart="afficherPanierModal = true"
-        @select-category="cat => categorieBoutiqueActive = cat" />
+        @select-category="cat => categorieBoutiqueActive = cat"
+        @search="q => rechercheBoutique = q" />
     
     <!-- Section Héroïque -->
     <Hero />
@@ -14,7 +15,7 @@
     <Services :listeServices="listeServices" />
     
     <!-- Boutique / Produits -->
-    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" @select-product="ouvrirDetailsProduit" />
+    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" :recherche="rechercheBoutique" @select-product="ouvrirDetailsProduit" />
     
     <!-- Galerie -->
     <Galerie :listeGalerie="listeGalerie" />
@@ -74,6 +75,7 @@ import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
 
 const categorieBoutiqueActive = ref('Toutes');
+const rechercheBoutique = ref('');
 const categoriesBoutique = computed(() => {
   const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
   return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];

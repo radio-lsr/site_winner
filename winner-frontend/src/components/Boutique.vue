@@ -6,18 +6,6 @@
               — {{ categorieActive }}
           </span>
       </h2>
-      <div class="boutique-filtres">
-          <input
-              v-model="recherchePublic"
-              type="text"
-              placeholder="🔍 Rechercher un produit (nom, code PRD-...)..."
-              class="boutique-search"
-          />
-          <select v-model="categorieLocale" class="boutique-select">
-              <option value="Toutes">Toutes les catégories</option>
-              <option v-for="cat in categoriesDisponibles" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
-      </div>
       <div class="produits-container">
           <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-card" @click="$emit('select-product', produit)">
               <div v-if="enPromo(produit)" class="promo-bar">🔥 En promotion</div>
