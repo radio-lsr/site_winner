@@ -60,9 +60,6 @@
 
       <div class="sidebar-footer">
         <span v-if="!sidebarRetractee" class="version">v 1.0 • WINNER ERP</span>
-        <button @click="deconnexion" class="btn-logout" :title="sidebarRetractee ? 'Déconnexion' : ''" :disabled="isLoading">
-          🚪 <span v-if="!sidebarRetractee">Déconnexion</span>
-        </button>
       </div>
     </aside>
 
