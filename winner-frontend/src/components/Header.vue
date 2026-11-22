@@ -55,10 +55,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Site vitrine : aucun compte client — le header ne gère que le panier.
-defineProps({
+const props = defineProps({
     cartItemCount: {
         type: Number,
         default: 0
@@ -66,10 +66,40 @@ defineProps({
     categories: {
         type: Array,
         default: () => []
+    },
+    produits: {
+        type: Array,
+        default: () => []
     }
 });
 
-const emit = defineEmits(['open-cart', 'select-category']);
+const emit = defineEmits(['open-cart', 'select-category', 'search', 'select-product']);
+const menuBoutiqueOuvert = ref(false);
+const termeRecherche = ref('');
+const suggestionsOuvertes = ref(false);
+
+const suggestions = computed(() => {
+    const q = termeRecherche.value.trim().toLowerCase();
+    if (!q) return [];
+    return (props.produits || []).filter(p => {
+        const code = `prd-${String(p.id).padStart(4, '0')}`;
+        return (p.nom || '').toLowerCase().includes(q) || code.includes(q);
+    }).slice(0, 6);
+});
+
+const onSearchInput = () => {
+    suggestionsOuvertes.value = true;
+    emit('search', termeRecherche.value);
+};
+
+const selectionnerProduit = (produit) => {
+    suggestionsOuvertes.value = false;
+    termeRecherche.value = produit.nom;
+    emit('search', '');
+    const el = document.getElementById('produits');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    emit('select-product', produit);
+};
 const menuBoutiqueOuvert = ref(false);
 
 const choisirCategorie = (cat) => {
