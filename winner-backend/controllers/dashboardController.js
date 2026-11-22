@@ -97,7 +97,40 @@ exports.getStats = async (req, res) => {
           amount: s.amount,
           percentage: s.amount > 0 ? Math.max(10, Math.round((s.amount / maxVal) * 100)) : 4
         }));
-      } catch (e) {}
+      } catch (e) {
+        console.error('[DASHBOARD] Erreur ventes mensuelles:', e.message);
+      }
+
+      // Ventes par jour sur le mois en cours (courbe mensuelle)
+      try {
+        const [dailyRows] = await db.query(
+          `SELECT DAY(created_at) AS jour, COALESCE(SUM(total), 0) AS montant
+           FROM commandes
+           WHERE statut != 'Annulée'
+             AND YEAR(created_at) = YEAR(CURDATE())
+             AND MONTH(created_at) = MONTH(CURDATE())
+           GROUP BY DAY(created_at)
+           ORDER BY jour ASC`
+        );
+        const parJour = new Map();
+        for (const row of dailyRows) {
+          parJour.set(Number(row.jour), Number(row.montant || 0));
+        }
+        const nowDaily = new Date();
+        const nbJours = new Date(nowDaily.getFullYear(), nowDaily.getMonth() + 1, 0).getDate();
+        const serieJours = [];
+        for (let j = 1; j <= nbJours; j++) {
+          serieJours.push({ label: String(j).padStart(2, '0'), amount: parJour.get(j) || 0 });
+        }
+        const maxJour = Math.max(...serieJours.map(s => s.amount), 1);
+        req._dailySales = serieJours.map(s => ({
+          month: s.label,
+          amount: s.amount,
+          percentage: s.amount > 0 ? Math.max(10, Math.round((s.amount / maxJour) * 100)) : 4
+        }));
+      } catch (e) {
+        console.error('[DASHBOARD] Erreur ventes journalières:', e.message);
+      }
     }
 
     res.json({
