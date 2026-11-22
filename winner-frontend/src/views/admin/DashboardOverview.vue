@@ -29,14 +29,40 @@
       <div class="chart-card">
         <h3>Évolution des Ventes (2026)</h3>
         <div class="chart-placeholder">
-          <div class="bar-chart">
-            <div v-for="(val, idx) in monthlySales" :key="idx" class="bar-col">
-              <div class="bar" :style="{ height: val.height }">
-                <span class="tooltip">{{ val.amount }}</span>
-              </div>
-              <span class="month">{{ val.month }}</span>
+          <div v-if="monthlySales.length > 0" class="line-chart-wrap">
+            <svg viewBox="0 0 500 180" class="line-chart-svg" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="salesAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f6a617" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="#f6a617" stop-opacity="0.02" />
+                </linearGradient>
+              </defs>
+              <line x1="20" y1="30" x2="480" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4" />
+              <line x1="20" y1="90" x2="480" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
+              <line x1="20" y1="150" x2="480" y2="150" stroke="#cbd5e1" />
+              <polygon v-if="salesAreaPoints" :points="salesAreaPoints" fill="url(#salesAreaGrad)" />
+              <polyline
+                v-if="salesLinePoints"
+                :points="salesLinePoints"
+                fill="none"
+                stroke="#f6a617"
+                stroke-width="3.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <g v-for="(pt, idx) in salesCoords" :key="idx">
+                <circle :cx="pt.x" :cy="pt.y" r="5" fill="#fff" stroke="#f6a617" stroke-width="3">
+                  <title>{{ pt.month }} : {{ pt.amount }}</title>
+                </circle>
+              </g>
+            </svg>
+            <div class="line-chart-months">
+              <span v-for="(val, idx) in monthlySales" :key="idx" class="month" :title="val.amount">
+                {{ val.month }}
+              </span>
             </div>
           </div>
+          <p v-else class="text-muted">Aucune donnée de vente disponible</p>
         </div>
       </div>
 
