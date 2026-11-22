@@ -152,8 +152,8 @@ const gererConnexion = async () => {
       return;
     }
 
-    // Redirection : l'admin vers le tableau de bord, le modérateur vers les commandes
-    router.push(data.user.role === 'Modérateur' ? '/admin/commandes' : '/admin');
+    // Redirection vers le tableau de bord adapté au rôle
+    router.push('/admin');
   } catch (error) {
     // Récupération de l'erreur renvoyée par le backend (ex: "Mot de passe incorrect")
     erreur.value = error.response?.data?.error || "Erreur de connexion au serveur.";

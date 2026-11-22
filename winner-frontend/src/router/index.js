@@ -139,7 +139,7 @@ router.beforeEach((to) => {
 
   // Bonus : Empêche un membre du personnel DÉJÀ connecté d'accéder à la page de login
   if (to.path === '/admin/login' && isStaff) {
-    return role === 'Modérateur' ? '/admin/commandes' : '/admin';
+    return '/admin';
   }
 
   // Si on ne retourne rien, Vue Router laisse passer la navigation naturellement

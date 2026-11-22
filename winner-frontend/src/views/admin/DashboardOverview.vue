@@ -3,19 +3,19 @@
     <!-- Bannière de Bienvenue -->
     <div class="welcome-banner">
       <div class="banner-text">
-        <h2>Bonjour, Administrateur 👋</h2>
-        <p>WINNER MULTISERVICE - Tableau de bord global</p>
+        <h2>Bonjour, {{ estAdmin ? 'Administrateur' : 'Modérateur' }} 👋</h2>
+        <p>WINNER MULTISERVICE - {{ estAdmin ? 'Tableau de bord global' : 'Espace de modération' }}</p>
       </div>
       <div class="banner-actions">
-        <router-link to="/admin/produits" class="btn-yellow">Gérer les produits</router-link>
+        <router-link to="/admin/produits" class="btn-yellow">{{ estAdmin ? 'Gérer les produits' : 'Voir les produits' }}</router-link>
         <router-link to="/admin/commandes" class="btn-yellow">Voir les commandes</router-link>
-        <router-link to="/admin/galerie" class="btn-yellow">Ajouter un média</router-link>
+        <router-link v-if="estAdmin" to="/admin/galerie" class="btn-yellow">Ajouter un média</router-link>
       </div>
     </div>
 
     <!-- Grille de Statistiques -->
     <div class="stats-grid">
-      <div v-for="(stat, index) in stats" :key="index" class="stat-card">
+      <div v-for="(stat, index) in statsVisibles" :key="index" class="stat-card">
         <div :class="['stat-icon', stat.bg]">{{ stat.icon }}</div>
         <div class="stat-info">
           <span class="stat-label">{{ stat.label }}</span>
@@ -24,8 +24,8 @@
       </div>
     </div>
 
-    <!-- Section Graphiques -->
-    <div class="charts-section">
+    <!-- Section Graphiques (réservée à l'administrateur) -->
+    <div v-if="estAdmin" class="charts-section">
       <div class="chart-card">
         <h3>Évolution des Ventes (2026)</h3>
         <div class="chart-placeholder">
@@ -139,17 +139,29 @@ import axios from 'axios'
 import { API_URL as API_ROOT } from '@/services/config'
 import { formatPrix } from '@/services/currency'
 
+const estAdmin = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role === 'Admin'
+  } catch {
+    return false
+  }
+})
+
 // Définition des statistiques dynamiques
 const stats = ref([
-  { label: 'Produits actifs', value: 0, icon: '📦', bg: 'bg-blue' },
-  { label: 'Commandes', value: 0, icon: '🛒', bg: 'bg-green' },
-  { label: 'Articles & Tutos', value: 0, icon: '📝', bg: 'bg-yellow' },
-  { label: 'Clients inscrits', value: 0, icon: '👥', bg: 'bg-purple' },
-  { label: 'Photos Galerie', value: 0, icon: '🖼️', bg: 'bg-red' },
-  { label: 'Vidéos publiées', value: 0, icon: '📺', bg: 'bg-teal' },
-  { label: 'Ventes ce mois', value: '0 CDF', icon: '💰', bg: 'bg-orange' },
-  { label: 'Visites du site', value: 0, icon: '📈', bg: 'bg-light-green' },
+  { label: 'Produits actifs', value: 0, icon: '📦', bg: 'bg-blue', adminOnly: false },
+  { label: 'Commandes', value: 0, icon: '🛒', bg: 'bg-green', adminOnly: false },
+  { label: 'Articles & Tutos', value: 0, icon: '📝', bg: 'bg-yellow', adminOnly: false },
+  { label: 'Clients inscrits', value: 0, icon: '👥', bg: 'bg-purple', adminOnly: true },
+  { label: 'Photos Galerie', value: 0, icon: '🖼️', bg: 'bg-red', adminOnly: true },
+  { label: 'Vidéos publiées', value: 0, icon: '📺', bg: 'bg-teal', adminOnly: false },
+  { label: 'Ventes ce mois', value: '0 CDF', icon: '💰', bg: 'bg-orange', adminOnly: true },
+  { label: 'Visites du site', value: 0, icon: '📈', bg: 'bg-light-green', adminOnly: true },
 ])
+
+const statsVisibles = computed(() =>
+  estAdmin.value ? stats.value : stats.value.filter(s => !s.adminOnly)
+)
 
 const monthlySales = ref([])
 const recentOrders = ref([])
