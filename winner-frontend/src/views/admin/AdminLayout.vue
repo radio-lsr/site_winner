@@ -31,17 +31,17 @@
             <span v-if="!sidebarRetractee" class="nav-label">Conseils & Tutos</span>
           </router-link>
           
-          <router-link to="/admin/galerie" class="nav-item" active-class="active" title="Galerie Médias">
+          <router-link v-if="estAdmin" to="/admin/galerie" class="nav-item" active-class="active" title="Galerie Médias">
             <span class="icon">🖼️</span>
             <span v-if="!sidebarRetractee" class="nav-label">Galerie Médias</span>
           </router-link>
 
-          <router-link to="/admin/utilisateurs" class="nav-item" active-class="active" title="Utilisateurs">
+          <router-link v-if="estAdmin" to="/admin/utilisateurs" class="nav-item" active-class="active" title="Utilisateurs">
             <span class="icon">👥</span>
             <span v-if="!sidebarRetractee" class="nav-label">Utilisateurs</span>
           </router-link>
 
-          <router-link to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
+          <router-link v-if="estAdmin" to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
             <span class="icon">✉️<span v-if="notificationState.messagesNonLus > 0" class="nav-badge">{{ notificationState.messagesNonLus }}</span></span>
             <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
           </router-link>
@@ -51,7 +51,7 @@
             <span v-if="!sidebarRetractee" class="nav-label">Avis & Commentaires</span>
           </router-link>
 
-          <router-link to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
+          <router-link v-if="estAdmin" to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
             <span class="icon">🖼️</span>
             <span v-if="!sidebarRetractee" class="nav-label">Bannière d'accueil</span>
           </router-link>
