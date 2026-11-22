@@ -10,15 +10,15 @@ DirectoryIndex index.html
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "DENY"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://api.winnermutiservice.com; media-src 'self' blob: https://api.winnermutiservice.com; connect-src 'self' https://api.winnermutiservice.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://api.winnermultiservice.com; media-src 'self' blob: https://api.winnermultiservice.com; connect-src 'self' https://api.winnermultiservice.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 </IfModule>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{HTTPS} !=on
-  RewriteRule ^ https://winnermutiservice.com%{REQUEST_URI} [R=301,L]
+  RewriteRule ^ https://winnermultiservice.com%{REQUEST_URI} [R=301,L]
   RewriteCond %{HTTP_HOST} ^www\.winnermutiservice\.com$ [NC]
-  RewriteRule ^ https://winnermutiservice.com%{REQUEST_URI} [R=301,L]
+  RewriteRule ^ https://winnermultiservice.com%{REQUEST_URI} [R=301,L]
   RewriteRule ^(?:robots\.txt|sitemap\.xml)$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
