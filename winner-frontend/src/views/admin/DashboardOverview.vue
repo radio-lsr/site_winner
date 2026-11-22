@@ -343,6 +343,14 @@ const fetchDashboardData = async () => {
     recentOrders.value = data.recentOrders || []
     topProducts.value = data.topProducts || []
     totalVisitors.value = data.visits || 0
+    if (Array.isArray(data.trafficSources)) {
+      const classes = ['bg-blue', 'bg-green', 'bg-yellow']
+      trafficSources.value = data.trafficSources.map((s, idx) => ({
+        label: s.label,
+        percentage: s.percentage || 0,
+        dotClass: classes[idx] || 'bg-blue'
+      }))
+    }
 
   } catch (error) {
     console.error("Erreur lors de la récupération des données du tableau de bord :", error)

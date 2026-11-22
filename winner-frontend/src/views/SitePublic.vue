@@ -272,6 +272,17 @@ const chargerServices = async () => {
 const listeServices = ref([]);
 
 onMounted(() => {
+  if (!sessionStorage.getItem('winner_visite_enregistree')) {
+    sessionStorage.setItem('winner_visite_enregistree', '1');
+    const refUrl = (document.referrer || '').toLowerCase();
+    let source = 'Direct';
+    if (/facebook|instagram|tiktok|twitter|x\.com|linkedin|whatsapp|t\.me|youtube/.test(refUrl)) {
+      source = 'Réseaux Sociaux';
+    } else if (/google|bing|yahoo|duckduckgo|ecosia|baidu/.test(refUrl)) {
+      source = 'Moteurs de recherche';
+    }
+    axios.post(`${API_URL}/dashboard/visite`, { source }).catch(() => {});
+  }
     chargerProduits();
     chargerGalerie();
     chargerArticles();
