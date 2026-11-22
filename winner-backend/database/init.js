@@ -50,6 +50,14 @@ const path = require('path');
     // que des droits sur cette base, jamais de privilèges CREATE DATABASE globaux.
     const schemaForAppUser = sql.replace(/CREATE DATABASE IF NOT EXISTS[^;]*;\s*/i, '').replace(/USE\s+[^;]+;\s*/i, '');
     await conn.query(schemaForAppUser);
+
+    // Migration idempotente : remplace l'ancien rôle 'Utilisateur' par 'Modérateur' sur une base existante
+    await conn.query(`
+      ALTER TABLE users MODIFY COLUMN role ENUM('Admin', 'Modérateur', 'Utilisateur') NOT NULL DEFAULT 'Modérateur';
+      UPDATE users SET role = 'Modérateur' WHERE role = 'Utilisateur';
+      ALTER TABLE users MODIFY COLUMN role ENUM('Admin', 'Modérateur') NOT NULL DEFAULT 'Modérateur';
+    `);
+
     console.log('✅ Base "winner_db" et toutes les tables créées avec succès.');
     process.exit(0);
   } catch (err) {
