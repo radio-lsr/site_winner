@@ -81,7 +81,7 @@ app.use('/api/auth/login', limits.login);
 app.use('/api/auth/forgot-password', limits.reset);
 app.use('/api/auth/reset-password', limits.reset);
 app.use('/api/contact', limits.contact);
-app.use('/api/commandes', limits.order);
+app.use('/api/commandes', (req, res, next) => req.method === 'POST' ? limits.order(req, res, next) : next());
 app.use('/api/avis', (req, res, next) => req.method === 'POST' ? limits.publicPost(req, res, next) : next());
 app.use('/api/commentaires', (req, res, next) => req.method === 'POST' ? limits.publicPost(req, res, next) : next());
 
