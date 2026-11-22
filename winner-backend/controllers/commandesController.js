@@ -113,6 +113,18 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.query('DELETE FROM commandes WHERE id = ?', [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Commande introuvable.' });
+    res.json({ message: 'Commande supprimée avec succès.' });
+  } catch (error) {
+    console.error('[ORDRE] Suppression impossible:', error.message);
+    res.status(500).json({ error: 'Erreur serveur lors de la suppression.' });
+  }
+};
+
 exports.getAllOrders = async (_req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM commandes ORDER BY created_at DESC');
