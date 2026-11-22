@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/winnermu/public_html/
+    - /bin/mkdir -p $DEPLOYPATH
+    - cd winner-backend && npm install --omit=dev
+    - cd winner-frontend && npm install && npm run build && /bin/cp -R dist/* $DEPLOYPATH
