@@ -6,6 +6,8 @@ Monorepo : API Express 5 (`winner-backend`) et application Vue 3 (`winner-fronte
 
 **Commandes :** les produits affichés par défaut si l'API est vide sont de simples exemples d'affichage. Le backend valide chaque article d'une commande contre la table `produits` (statut actif et stock suffisant) : ajoutez vos produits dans `/admin/produits` avant de tester une commande, sinon l'API répond « Un produit de la commande est indisponible ».
 
+**Import de produits :** dans `/admin/produits`, les administrateurs peuvent importer des produits en masse depuis un fichier Excel (`.xls`, `.xlsx`) ou CSV (`.csv`) grâce au bouton « Importer ». Un modèle CSV est téléchargeable depuis la fenêtre d'import. Colonnes reconnues : `nom`, `catégorie`, `description`, `prix`, `remise`, `stock`, `statut`, `image` — seuls `nom` et `prix` sont obligatoires, 500 lignes maximum. Les lignes invalides sont refusées et signalées avec leur numéro de ligne, sans bloquer l'import des lignes valides.
+
 ## 🐳 Lancement Docker (recommandé)
 
 Prérequis : Docker Desktop démarré. Au premier lancement, créez des secrets propres à votre installation :
