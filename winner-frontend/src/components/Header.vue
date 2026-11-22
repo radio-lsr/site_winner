@@ -28,9 +28,21 @@
                       type="search"
                       placeholder="🔍 Rechercher un produit..."
                       class="header-search-input"
+                      @focus="suggestionsOuvertes = true"
                       @input="onSearchInput"
                       @keydown.enter="allerAuxProduits"
                   />
+                  <ul v-if="suggestionsOuvertes && suggestions.length > 0" class="search-suggestions">
+                      <li
+                          v-for="p in suggestions"
+                          :key="p.id"
+                          class="suggestion-item"
+                          @mousedown.prevent="selectionnerProduit(p)"
+                      >
+                          <span class="suggestion-nom">{{ p.nom }}</span>
+                          <span class="suggestion-code">PRD-{{ String(p.id).padStart(4, '0') }}</span>
+                      </li>
+                  </ul>
               </li>
               <li>
                   <a href="#" @click.prevent="$emit('open-cart')" class="btn-panier">
@@ -127,4 +139,32 @@ nav ul li a:hover { color: #E31E24; }
     border-color: #1e3a8a;
     width: 220px;
 }
+.header-search-item { position: relative; }
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 260px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    list-style: none;
+    padding: 6px 0;
+    margin: 0;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+}
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1e293b;
+}
+.suggestion-item:hover { background: #f1f5f9; color: #1e3a8a; }
+.suggestion-code { font-size: 11px; color: #64748b; font-weight: 600; }
 </style>

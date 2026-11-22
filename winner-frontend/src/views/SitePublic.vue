@@ -4,9 +4,11 @@
     <Header
         :cartItemCount="panier.length"
         :categories="categoriesBoutique"
+        :produits="listeProduits"
         @open-cart="afficherPanierModal = true"
         @select-category="cat => categorieBoutiqueActive = cat"
-        @search="q => rechercheBoutique = q" />
+        @search="q => rechercheBoutique = q"
+        @select-product="ouvrirDetailsProduit" />
     
     <!-- Section Héroïque -->
     <Hero />
