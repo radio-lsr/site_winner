@@ -100,7 +100,6 @@ const selectionnerProduit = (produit) => {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
     emit('select-product', produit);
 };
-const menuBoutiqueOuvert = ref(false);
 
 const choisirCategorie = (cat) => {
     menuBoutiqueOuvert.value = false;

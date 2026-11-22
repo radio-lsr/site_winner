@@ -114,6 +114,7 @@
           <td><img :src="formatImageUrl(produit.image)" :alt="produit.nom" class="table-img" /></td>
           <td>
             <strong>{{ produit.nom }}</strong>
+            <div style="font-size: 11px; color: #64748b; font-weight: 600;">Code : PRD-{{ String(produit.id).padStart(4, '0') }}</div>
             <div class="text-muted" style="font-size: 11px; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               {{ produit.description }}
             </div>
