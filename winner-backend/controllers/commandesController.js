@@ -1,10 +1,12 @@
+const crypto = require('crypto');
 const db = require('../config/db');
 
-const genererReference = (id, modeRetrait = 'Livraison') => {
+const genererReference = (modeRetrait = 'Livraison') => {
   const d = new Date();
   const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   const prefix = modeRetrait === 'Réservation' ? 'RES' : 'CMD';
-  return `${prefix}-${dateStr}-${String(id).padStart(4, '0')}`;
+  const rand = crypto.randomBytes(4).toString('hex').toUpperCase();
+  return `${prefix}-${dateStr}-${rand}`;
 };
 const formaterCommande = (c) => {
   let articles = [];
