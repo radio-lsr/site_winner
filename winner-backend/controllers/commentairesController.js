@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { chiffrer, dechiffrer } = require('../services/cryptoText');
 
 // ============================================================
 // Commentaires des visiteurs sur les Conseils & Tutos (articles)
