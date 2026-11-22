@@ -1,8 +1,13 @@
 <template>
   <section id="produits">
-      <h2 class="section-title">Nos Produits en Vente</h2>
+      <h2 class="section-title">
+          Nos Produits en Vente
+          <span v-if="categorieActive && categorieActive !== 'Toutes'" class="categorie-badge">
+              — {{ categorieActive }}
+          </span>
+      </h2>
       <div class="produits-container">
-          <div v-for="produit in listeProduits" :key="produit.id" class="produit-card" @click="$emit('select-product', produit)">
+          <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-card" @click="$emit('select-product', produit)">
               <div v-if="enPromo(produit)" class="promo-bar">🔥 En promotion</div>
               <div class="produit-img-container">
                   <img :src="produit.image" :alt="produit.nom">
@@ -26,15 +31,25 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { formatPrix } from '../services/currency';
 
-defineProps({
+const props = defineProps({
     listeProduits: {
         type: Array,
         required: true
+    },
+    categorieActive: {
+        type: String,
+        default: 'Toutes'
     }
 });
 defineEmits(['select-product']);
+
+const produitsFiltres = computed(() => {
+    if (!props.categorieActive || props.categorieActive === 'Toutes') return props.listeProduits;
+    return props.listeProduits.filter(p => (p.categorie || '').toLowerCase() === props.categorieActive.toLowerCase());
+});
 
 // Un produit est en promotion s'il a un prix d'origine barré
 const enPromo = (produit) => Boolean(produit && produit.prixOriginal && produit.prixOriginal > produit.prix);

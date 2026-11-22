@@ -3,7 +3,9 @@
     <!-- En-tête -->
     <Header
         :cartItemCount="panier.length"
-        @open-cart="afficherPanierModal = true" />
+        :categories="categoriesBoutique"
+        @open-cart="afficherPanierModal = true"
+        @select-category="cat => categorieBoutiqueActive = cat" />
     
     <!-- Section Héroïque -->
     <Hero />
@@ -12,7 +14,7 @@
     <Services :listeServices="listeServices" />
     
     <!-- Boutique / Produits -->
-    <Boutique :listeProduits="listeProduits" @select-product="ouvrirDetailsProduit" />
+    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" @select-product="ouvrirDetailsProduit" />
     
     <!-- Galerie -->
     <Galerie :listeGalerie="listeGalerie" />
@@ -54,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { API_URL, formatImageUrl } from '../services/config';
 import { notify } from '../services/dialog';
@@ -70,6 +72,12 @@ import Footer from '../components/Footer.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
+
+const categorieBoutiqueActive = ref('Toutes');
+const categoriesBoutique = computed(() => {
+  const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
+  return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
+});
 
 const listeProduits = ref([
     { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
