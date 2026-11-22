@@ -1,20 +1,29 @@
+const crypto = require('crypto');
 const db = require('../config/db');
 
-const genererReference = (id) => {
+const genererReference = (modeRetrait = 'Livraison') => {
   const d = new Date();
   const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  return `CMD-${dateStr}-${String(id).padStart(4, '0')}`;
+  const prefix = modeRetrait === 'Réservation' ? 'RES' : 'CMD';
+  const rand = crypto.randomBytes(4).toString('hex').toUpperCase();
+  return `${prefix}-${dateStr}-${rand}`;
 };
 const formaterCommande = (c) => {
   let articles = [];
   try { articles = typeof c.articles === 'string' ? JSON.parse(c.articles) : (c.articles || []); } catch { /* donnée historique invalide */ }
-  return { id: c.id, ref: c.ref || genererReference(c.id), date: c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '', client: c.client_nom, contact: c.client_telephone, adresse: c.adresse_livraison, dateLivraison: c.date_livraison, montant: Number(c.total) || 0, livreur: c.livreur || '', statut: c.statut || 'En attente', articles };
+  return { id: c.id, ref: c.ref || genererReference(c.mode_retrait), date: c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '', client: c.client_nom, contact: c.client_telephone, email: c.client_email || '', modeRetrait: c.mode_retrait || 'Livraison', adresse: c.adresse_livraison, dateLivraison: c.date_livraison, montant: Number(c.total) || 0, livreur: c.livreur || '', statut: c.statut || 'En attente', articles };
 };
 
 exports.createOrder = async (req, res) => {
   try {
-    const { nom, telephone, adresse, dateLivraison, articles } = req.body || {};
-    const client = { nom: String(nom || '').trim(), telephone: String(telephone || '').trim(), adresse: String(adresse || '').trim() };
+    const { nom, telephone, email, modeRetrait, adresse, dateLivraison, articles } = req.body || {};
+    const mode = modeRetrait === 'Réservation' ? 'Réservation' : 'Livraison';
+    const client = {
+      nom: String(nom || '').trim(),
+      telephone: String(telephone || '').trim(),
+      email: String(email || '').trim().toLowerCase(),
+      adresse: mode === 'Réservation' ? (String(adresse || '').trim() || 'Retrait en boutique') : String(adresse || '').trim()
+    };
     let livraison = null;
     if (dateLivraison) {
       const parsedDate = new Date(`${dateLivraison}T00:00:00Z`);
@@ -23,8 +32,8 @@ exports.createOrder = async (req, res) => {
       }
       livraison = String(dateLivraison);
     }
-    if (!client.nom || !client.telephone || !client.adresse || !Array.isArray(articles) || !articles.length || articles.length > 50) {
-      return res.status(400).json({ error: 'Nom, téléphone, adresse et 1 à 50 articles sont requis.' });
+    if (!client.nom || !client.telephone || !client.email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(client.email) || (mode === 'Livraison' && !client.adresse) || !Array.isArray(articles) || !articles.length || articles.length > 50) {
+      return res.status(400).json({ error: 'Nom, téléphone, email valide, adresse (pour livraison) et 1 à 50 articles sont requis.' });
     }
     if (client.nom.length > 150 || client.telephone.length > 50 || client.adresse.length > 500) return res.status(400).json({ error: 'Les coordonnées dépassent la longueur autorisée.' });
 
@@ -52,22 +61,69 @@ exports.createOrder = async (req, res) => {
       if (!Number.isFinite(base) || base < 0) return res.status(409).json({ error: 'Prix produit invalide en base.' });
       const unitPrice = Math.round(base * (1 - discount / 100) * 100) / 100;
       total += unitPrice * quantity;
-      safeLines.push({ id, nom: String(product.nom), prix: unitPrice, quantite: quantity });
+      const codeProduit = `PRD-${String(id).padStart(4, '0')}`;
+      safeLines.push({ id, codeProduit, nom: String(product.nom), prix: unitPrice, quantite: quantity });
     }
     total = Math.round(total * 100) / 100;
     if (!Number.isFinite(total) || total > 99999999.99) return res.status(400).json({ error: 'Le montant total dépasse la limite autorisée.' });
 
     const [result] = await db.query(
-      `INSERT INTO commandes (client_nom, client_telephone, adresse_livraison, date_livraison, articles, total, statut, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'En attente', NOW())`,
-      [client.nom, client.telephone, client.adresse, livraison, JSON.stringify(safeLines), total]
+      `INSERT INTO commandes (client_nom, client_telephone, client_email, mode_retrait, adresse_livraison, date_livraison, articles, total, statut, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'En attente', NOW())`,
+      [client.nom, client.telephone, client.email, mode, client.adresse, livraison, JSON.stringify(safeLines), total]
     );
-    const ref = genererReference(result.insertId);
+    const ref = genererReference(mode);
     await db.query('UPDATE commandes SET ref = ? WHERE id = ?', [ref, result.insertId]);
-    res.status(201).json({ message: 'Commande enregistrée avec succès. Nous vous contacterons bientôt.', id: result.insertId, ref });
+
+    // Envoi du code commande / réservation par email si SMTP est configuré
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT || '587', 10),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        });
+        const labelCode = mode === 'Réservation' ? 'Code de réservation' : 'Code de commande';
+        const lignesHtml = safeLines
+          .map(l => `<li><strong>[${l.codeProduit}]</strong> ${l.nom} × ${l.quantite} — ${(l.prix * l.quantite).toLocaleString('fr-FR')} CDF</li>`)
+          .join('');
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: client.email,
+          subject: `${labelCode} ${ref} — WINNER Multiservice`,
+          text: `Bonjour ${client.nom},\n\nVotre ${mode.toLowerCase()} a bien été enregistrée.\n${labelCode} : ${ref}\nTotal : ${total.toLocaleString('fr-FR')} CDF\n\nMerci pour votre confiance,\nWINNER Multiservice`,
+          html: `<p>Bonjour <strong>${client.nom}</strong>,</p><p>Votre <strong>${mode.toLowerCase()}</strong> a bien été enregistrée.</p><p><strong>${labelCode} :</strong> <span style="font-size:18px;color:#1e3a8a;">${ref}</span></p><ul>${lignesHtml}</ul><p><strong>Total :</strong> ${total.toLocaleString('fr-FR')} CDF</p><p>Merci pour votre confiance,<br>WINNER Multiservice</p>`
+        });
+      } catch (mailErr) {
+        console.warn('[ORDRE] Email non envoyé:', mailErr.message);
+      }
+    }
+
+    res.status(201).json({
+      message: mode === 'Réservation'
+        ? `Réservation enregistrée (${ref}). Votre code a été envoyé à ${client.email}.`
+        : `Commande enregistrée (${ref}). Votre code a été envoyé à ${client.email}.`,
+      id: result.insertId,
+      ref,
+      modeRetrait: mode
+    });
   } catch (error) {
     console.error('[ORDRE] Création impossible:', error.message);
     res.status(500).json({ error: "Erreur serveur lors de l'enregistrement de la commande." });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.query('DELETE FROM commandes WHERE id = ?', [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Commande introuvable.' });
+    res.json({ message: 'Commande supprimée avec succès.' });
+  } catch (error) {
+    console.error('[ORDRE] Suppression impossible:', error.message);
+    res.status(500).json({ error: 'Erreur serveur lors de la suppression.' });
   }
 };
 

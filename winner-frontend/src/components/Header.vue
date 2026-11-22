@@ -22,6 +22,28 @@
               <li><a href="#galerie">Galerie</a></li>
               <li><a href="#articles">Conseils</a></li>
               <li><a href="#apropos">À Propos</a></li>
+              <li class="header-search-item">
+                  <input
+                      v-model="termeRecherche"
+                      type="search"
+                      placeholder="🔍 Rechercher un produit..."
+                      class="header-search-input"
+                      @focus="suggestionsOuvertes = true"
+                      @input="onSearchInput"
+                      @keydown.enter="allerAuxProduits"
+                  />
+                  <ul v-if="suggestionsOuvertes && suggestions.length > 0" class="search-suggestions">
+                      <li
+                          v-for="p in suggestions"
+                          :key="p.id"
+                          class="suggestion-item"
+                          @mousedown.prevent="selectionnerProduit(p)"
+                      >
+                          <span class="suggestion-nom">{{ p.nom }}</span>
+                          <span class="suggestion-code">PRD-{{ String(p.id).padStart(4, '0') }}</span>
+                      </li>
+                  </ul>
+              </li>
               <li>
                   <a href="#" @click.prevent="$emit('open-cart')" class="btn-panier">
                       🛒 Panier <span v-if="cartItemCount > 0" class="badge">{{ cartItemCount }}</span>
@@ -33,10 +55,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Site vitrine : aucun compte client — le header ne gère que le panier.
-defineProps({
+const props = defineProps({
     cartItemCount: {
         type: Number,
         default: 0
@@ -44,11 +66,40 @@ defineProps({
     categories: {
         type: Array,
         default: () => []
+    },
+    produits: {
+        type: Array,
+        default: () => []
     }
 });
 
-const emit = defineEmits(['open-cart', 'select-category']);
+const emit = defineEmits(['open-cart', 'select-category', 'search', 'select-product']);
 const menuBoutiqueOuvert = ref(false);
+const termeRecherche = ref('');
+const suggestionsOuvertes = ref(false);
+
+const suggestions = computed(() => {
+    const q = termeRecherche.value.trim().toLowerCase();
+    if (!q) return [];
+    return (props.produits || []).filter(p => {
+        const code = `prd-${String(p.id).padStart(4, '0')}`;
+        return (p.nom || '').toLowerCase().includes(q) || code.includes(q);
+    }).slice(0, 6);
+});
+
+const onSearchInput = () => {
+    suggestionsOuvertes.value = true;
+    emit('search', termeRecherche.value);
+};
+
+const selectionnerProduit = (produit) => {
+    suggestionsOuvertes.value = false;
+    termeRecherche.value = produit.nom;
+    emit('search', '');
+    const el = document.getElementById('produits');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    emit('select-product', produit);
+};
 
 const choisirCategorie = (cat) => {
     menuBoutiqueOuvert.value = false;
@@ -104,4 +155,45 @@ nav ul li a:hover { color: #E31E24; }
     background: #f8fafc;
     color: #1e3a8a;
 }
+.header-search-input {
+    padding: 7px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    font-size: 13px;
+    width: 190px;
+    outline: none;
+    transition: border-color 0.2s, width 0.2s;
+}
+.header-search-input:focus {
+    border-color: #1e3a8a;
+    width: 220px;
+}
+.header-search-item { position: relative; }
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 260px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    list-style: none;
+    padding: 6px 0;
+    margin: 0;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+}
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1e293b;
+}
+.suggestion-item:hover { background: #f1f5f9; color: #1e3a8a; }
+.suggestion-code { font-size: 11px; color: #64748b; font-weight: 600; }
 </style>

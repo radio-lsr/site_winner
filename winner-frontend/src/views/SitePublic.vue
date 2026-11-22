@@ -4,8 +4,11 @@
     <Header
         :cartItemCount="panier.length"
         :categories="categoriesBoutique"
+        :produits="listeProduits"
         @open-cart="afficherPanierModal = true"
-        @select-category="cat => categorieBoutiqueActive = cat" />
+        @select-category="cat => categorieBoutiqueActive = cat"
+        @search="q => rechercheBoutique = q"
+        @select-product="ouvrirDetailsProduit" />
     
     <!-- Section Héroïque -->
     <Hero />
@@ -14,7 +17,7 @@
     <Services :listeServices="listeServices" />
     
     <!-- Boutique / Produits -->
-    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" @select-product="ouvrirDetailsProduit" />
+    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" :recherche="rechercheBoutique" @select-product="ouvrirDetailsProduit" />
     
     <!-- Galerie -->
     <Galerie :listeGalerie="listeGalerie" />
@@ -74,6 +77,7 @@ import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
 
 const categorieBoutiqueActive = ref('Toutes');
+const rechercheBoutique = ref('');
 const categoriesBoutique = computed(() => {
   const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
   return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
@@ -164,9 +168,11 @@ const supprimerDuPanier = (index) => {
 const confirmerCommande = async (formData) => {
     // Envoi réel de la commande au backend (route publique POST /api/commandes)
     try {
-        await axios.post(`${API_URL}/commandes`, {
+        const { data } = await axios.post(`${API_URL}/commandes`, {
             nom: formData.nom,
             telephone: formData.telephone,
+            email: formData.email,
+            modeRetrait: formData.modeRetrait,
             adresse: formData.adresse,
             dateLivraison: formData.date || null,
             articles: panier.value.map(item => ({
@@ -177,7 +183,7 @@ const confirmerCommande = async (formData) => {
             }))
         });
         panier.value = [];
-        notify('Votre commande a été envoyée avec succès !', 'success');
+        notify(data?.message || 'Votre commande a été envoyée avec succès !', 'success');
     } catch (error) {
         console.error("Erreur lors de l'envoi de la commande :", error);
         const detail = error.response?.data?.error;

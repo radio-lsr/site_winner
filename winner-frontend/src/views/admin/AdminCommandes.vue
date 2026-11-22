@@ -123,6 +123,13 @@
           </td>
           <td class="actions-cell">
             <button class="action-btn" title="Voir détails / Editer" @click="ouvrirDetails(cmd)">👁️</button>
+            <button
+              v-if="estAdmin"
+              class="action-btn"
+              title="Supprimer la commande"
+              @click="supprimerCommande(cmd.id)"
+              :disabled="isLoading"
+            >🗑️</button>
             <button 
               class="action-btn cancel-btn" 
               title="Annuler la commande" 
@@ -153,6 +160,34 @@ const getAuthHeaders = () => ({ withCredentials: true })
 const commandes = ref([])
 const recherche = ref('')
 const isLoading = ref(false)
+
+const estAdmin = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role === 'Admin'
+  } catch {
+    return false
+  }
+})
+
+const supprimerCommande = async (id) => {
+  if (!(await demanderConfirmation({
+    titre: 'Supprimer cette commande ?',
+    message: 'Cette action est définitive.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  }))) return
+  try {
+    isLoading.value = true
+    await axios.delete(`${API_URL}/commandes/${id}`, { withCredentials: true })
+    commandes.value = commandes.value.filter(c => c.id !== id)
+    rafraichirNotifications()
+    notify('Commande supprimée avec succès.', 'success')
+  } catch (err) {
+    notify(err.response?.data?.error || 'Impossible de supprimer la commande.', 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // --- ÉTATS MODALE ---
 const afficherModal = ref(false)

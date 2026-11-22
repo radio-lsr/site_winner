@@ -1,7 +1,18 @@
 <template>
   <div class="page-section">
     <div class="page-header">
-      <input type="text" placeholder="🔍 Rechercher un produit..." class="search-input" v-model="recherche" />
+      <div class="filters-bar">
+        <input type="text" placeholder="🔍 Rechercher par nom, code (PRD-...), catégorie..." class="search-input" v-model="recherche" />
+        <select v-model="filtreCategorie" class="filter-select">
+          <option value="">Toutes les catégories</option>
+          <option v-for="cat in categoriesDisponibles" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+        <select v-model="filtreStatut" class="filter-select">
+          <option value="">Tous les statuts</option>
+          <option value="Actif">Actif</option>
+          <option value="Inactif">Inactif</option>
+        </select>
+      </div>
       <button v-if="estAdmin" class="btn-yellow" @click="ouvrirModalAjout">➕ Nouveau Produit</button>
       <span v-else class="lecture-seule">👁️ Mode lecture seule</span>
     </div>
@@ -83,6 +94,7 @@
       <thead>
         <tr>
           <th>Image</th>
+          <th>Code-Produit</th>
           <th>Nom du produit</th>
           <th>Catégorie</th>
           <th>Prix</th>
@@ -94,13 +106,14 @@
       </thead>
       <tbody>
         <tr v-if="produitsFiltres.length === 0">
-          <td colspan="8" style="text-align: center; color: #6b7280; padding: 30px;">
+          <td colspan="9" style="text-align: center; color: #6b7280; padding: 30px;">
             Aucun produit trouvé.
           </td>
         </tr>
         <tr v-else v-for="produit in produitsFiltres" :key="produit.id">
           <!-- CORRECTION : Utilisation de formatImageUrl pour afficher la bonne URL -->
           <td><img :src="formatImageUrl(produit.image)" :alt="produit.nom" class="table-img" /></td>
+          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">PRD-{{ String(produit.id).padStart(4, '0') }}</span></td>
           <td>
             <strong>{{ produit.nom }}</strong>
             <div class="text-muted" style="font-size: 11px; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -208,13 +221,25 @@ onMounted(() => {
   fetchProduits()
 })
 
+const filtreCategorie = ref('')
+const filtreStatut = ref('')
+
+const categoriesDisponibles = computed(() =>
+  [...new Set(produits.value.map(p => (p.categorie || '').trim()).filter(Boolean))].sort()
+)
+
 const produitsFiltres = computed(() => {
-  if (!recherche.value) return produits.value
-  const q = recherche.value.toLowerCase()
-  return produits.value.filter(p => 
-    p.nom.toLowerCase().includes(q) ||
-    p.categorie.toLowerCase().includes(q)
-  )
+  const q = recherche.value.trim().toLowerCase()
+  return produits.value.filter(p => {
+    const code = `prd-${String(p.id).padStart(4, '0')}`
+    const matchTexte = !q ||
+      (p.nom || '').toLowerCase().includes(q) ||
+      (p.categorie || '').toLowerCase().includes(q) ||
+      code.includes(q)
+    const matchCat = !filtreCategorie.value || p.categorie === filtreCategorie.value
+    const matchStatut = !filtreStatut.value || p.statut === filtreStatut.value
+    return matchTexte && matchCat && matchStatut
+  })
 })
 
 // Capture du fichier image
@@ -344,6 +369,8 @@ const formatImageUrl = (imagePath) => {
 
 .btn-yellow { background-color: #f6a617; color: #1f1443; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .lecture-seule { background-color: #e0f2fe; color: #0369a1; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+.filters-bar { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; align-items: center; }
+.filter-select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; color: #334155; }
 .btn-yellow:hover { background-color: #e09612; }
 .btn-yellow:disabled { opacity: 0.6; cursor: not-allowed; }
 
