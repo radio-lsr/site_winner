@@ -9,7 +9,7 @@ const genererReference = (id, modeRetrait = 'Livraison') => {
 const formaterCommande = (c) => {
   let articles = [];
   try { articles = typeof c.articles === 'string' ? JSON.parse(c.articles) : (c.articles || []); } catch { /* donnée historique invalide */ }
-  return { id: c.id, ref: c.ref || genererReference(c.id, c.mode_retrait), date: c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '', client: c.client_nom, contact: c.client_telephone, email: c.client_email || '', modeRetrait: c.mode_retrait || 'Livraison', adresse: c.adresse_livraison, dateLivraison: c.date_livraison, montant: Number(c.total) || 0, livreur: c.livreur || '', statut: c.statut || 'En attente', articles };
+  return { id: c.id, ref: c.ref || genererReference(c.mode_retrait), date: c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '', client: c.client_nom, contact: c.client_telephone, email: c.client_email || '', modeRetrait: c.mode_retrait || 'Livraison', adresse: c.adresse_livraison, dateLivraison: c.date_livraison, montant: Number(c.total) || 0, livreur: c.livreur || '', statut: c.statut || 'En attente', articles };
 };
 
 exports.createOrder = async (req, res) => {
@@ -70,7 +70,7 @@ exports.createOrder = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'En attente', NOW())`,
       [client.nom, client.telephone, client.email, mode, client.adresse, livraison, JSON.stringify(safeLines), total]
     );
-    const ref = genererReference(result.insertId, mode);
+    const ref = genererReference(mode);
     await db.query('UPDATE commandes SET ref = ? WHERE id = ?', [ref, result.insertId]);
 
     // Envoi du code commande / réservation par email si SMTP est configuré
