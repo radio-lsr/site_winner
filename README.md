@@ -53,12 +53,12 @@ Les anciennes valeurs root/JWT/admin ont été publiées et doivent être consid
 
 Prérequis : Node.js 22.18 ou plus récent. SQLite est inclus via le module natif `node:sqlite` : aucun serveur MySQL à installer.
 
-1. Copiez `winner-backend/.env.example` vers `winner-backend/.env` et définissez un `JWT_SECRET` aléatoire d'au moins 64 caractères, `ADMIN_EMAIL` et un `ADMIN_PASSWORD` unique d'au moins 12 caractères.
+1. Copiez le `.env.example` de la racine du projet vers `winner-backend/.env` et définissez un `JWT_SECRET` aléatoire d'au moins 64 caractères, `ADMIN_EMAIL` et un `ADMIN_PASSWORD` unique d'au moins 12 caractères.
 2. Dans PowerShell :
 
 ```powershell
 cd D:\karl\site_winner\winner-backend
-Copy-Item .env.example .env
+Copy-Item ..\.env.example .env
 notepad .env
 npm install
 npm run db:init
