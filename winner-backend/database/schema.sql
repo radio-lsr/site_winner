@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS commandes (
   ref VARCHAR(50) DEFAULT NULL,
   client_nom VARCHAR(150) NOT NULL,
   client_telephone VARCHAR(50) NOT NULL,
+  client_email VARCHAR(150) DEFAULT NULL,
+  mode_retrait ENUM('Livraison', 'Réservation') NOT NULL DEFAULT 'Livraison',
   adresse_livraison TEXT NOT NULL,
   date_livraison DATE DEFAULT NULL,
   articles JSON NOT NULL,

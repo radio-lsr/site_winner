@@ -25,15 +25,26 @@
               </div>
 
               <div class="panier-formulaire">
-                  <h3>Informations de livraison</h3>
+                  <h3>{{ formulaire.modeRetrait === 'Réservation' ? 'Informations de réservation' : 'Informations de livraison' }}</h3>
+                  <div class="mode-retrait-tabs">
+                      <button type="button" :class="['mode-tab', formulaire.modeRetrait === 'Livraison' && 'active']" @click="formulaire.modeRetrait = 'Livraison'">
+                          🚚 Livraison à domicile
+                      </button>
+                      <button type="button" :class="['mode-tab', formulaire.modeRetrait === 'Réservation' && 'active']" @click="formulaire.modeRetrait = 'Réservation'">
+                          🏪 Réservation
+                      </button>
+                  </div>
                   <form @submit.prevent="validerCommande">
                       <input type="text" v-model="formulaire.nom" placeholder="Nom et Prénom" required autocomplete="name">
                       <input type="tel" v-model="formulaire.telephone" placeholder="Numéro de Téléphone" required autocomplete="tel">
-                      <textarea v-model="formulaire.adresse" placeholder="Adresse complète de livraison" rows="3" required></textarea>
-                      <label>Date de livraison souhaitée :</label>
+                      <input type="email" v-model="formulaire.email" placeholder="Adresse Email (pour recevoir votre code)" required autocomplete="email">
+                      <textarea v-if="formulaire.modeRetrait === 'Livraison'" v-model="formulaire.adresse" placeholder="Adresse complète de livraison" rows="3" required></textarea>
+                      <label>{{ formulaire.modeRetrait === 'Réservation' ? 'Date de retrait souhaitée :' : 'Date de livraison souhaitée :' }}</label>
                       <input type="date" v-model="formulaire.date" :min="minDate" required>
                       
-                      <button type="submit" class="btn btn-block">Confirmer la commande</button>
+                      <button type="submit" class="btn btn-block">
+                          {{ formulaire.modeRetrait === 'Réservation' ? 'Confirmer la réservation' : 'Confirmer la commande' }}
+                      </button>
                   </form>
               </div>
           </div>
@@ -65,6 +76,8 @@ const emit = defineEmits(['close', 'remove-item', 'submit-order']);
 const formulaire = ref({
     nom: '',
     telephone: '',
+    email: '',
+    modeRetrait: 'Livraison',
     adresse: '',
     date: ''
 });
@@ -109,4 +122,7 @@ const validerCommande = () => {
 .btn:hover { background-color: #80142D; }
 .btn-block { width: 100%; margin-top: 15px; }
 .message-succes { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; text-align: center; margin-top: 20px; font-weight: bold; }
+.mode-retrait-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.mode-tab { flex: 1; padding: 8px 10px; border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; }
+.mode-tab.active { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 </style>
