@@ -29,7 +29,10 @@
       <div class="chart-card">
         <h3>Évolution des Ventes (2026)</h3>
         <div class="chart-placeholder">
-          <div v-if="monthlySales.length > 0" class="line-chart-wrap">
+          <div v-if="monthlySales.length > 0" class="line-chart-wrap" @mouseleave="hoveredPoint = null">
+            <div v-if="hoveredPoint" class="chart-tooltip" :style="{ left: hoveredPoint.leftPct + '%', top: hoveredPoint.topPct + '%' }">
+              <strong>{{ hoveredPoint.month }}</strong> : {{ hoveredPoint.amount }}
+            </div>
             <svg viewBox="0 0 500 180" class="line-chart-svg" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="salesAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -40,6 +43,16 @@
               <line x1="20" y1="30" x2="480" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4" />
               <line x1="20" y1="90" x2="480" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
               <line x1="20" y1="150" x2="480" y2="150" stroke="#cbd5e1" />
+              <line
+                v-if="hoveredPoint"
+                :x1="hoveredPoint.x"
+                y1="20"
+                :x2="hoveredPoint.x"
+                y2="150"
+                stroke="#f6a617"
+                stroke-width="1.5"
+                stroke-dasharray="3 3"
+              />
               <path v-if="salesAreaPath" :d="salesAreaPath" fill="url(#salesAreaGrad)" />
               <path
                 v-if="salesLinePath"
@@ -50,6 +63,18 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 style="filter: drop-shadow(0 3px 6px rgba(246, 166, 23, 0.35));"
+              />
+              <!-- Zones invisibles de survol pour chaque mois -->
+              <rect
+                v-for="(pt, idx) in salesCoords"
+                :key="'hover-' + idx"
+                :x="pt.x - 40"
+                y="0"
+                width="80"
+                height="180"
+                fill="transparent"
+                style="cursor: pointer;"
+                @mouseenter="hoveredPoint = { ...pt, leftPct: (pt.x / 500) * 100, topPct: (pt.y / 180) * 100 }"
               />
             </svg>
             <div class="line-chart-months">
