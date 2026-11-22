@@ -98,6 +98,7 @@ app.use('/api/avis', avisRoutes);
 app.use('/api/commentaires', commentairesRoutes);
 app.use('/api/hero', heroRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/logs', require('./routes/logsRoutes'));
 app.get('/', (_req, res) => res.json({ message: "API WINNER en cours d'exécution..." }));
 app.use(errorHandler);
 

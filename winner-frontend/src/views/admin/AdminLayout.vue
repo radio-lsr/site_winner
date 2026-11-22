@@ -55,6 +55,11 @@
             <span class="icon">🖼️</span>
             <span v-if="!sidebarRetractee" class="nav-label">Bannière d'accueil</span>
           </router-link>
+
+          <router-link v-if="estAdmin" to="/admin/logs" class="nav-item" active-class="active" title="Logs">
+            <span class="icon">📜</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Logs</span>
+          </router-link>
         </nav>
       </div>
 

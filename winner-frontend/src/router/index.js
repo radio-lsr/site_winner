@@ -15,6 +15,7 @@ import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
 import AdminMessages from '@/views/admin/AdminMessages.vue';
 import AdminAvis from '@/views/admin/AdminAvis.vue';
 import AdminHero from '@/views/admin/AdminHero.vue';
+import AdminLogs from '@/views/admin/AdminLogs.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -92,6 +93,12 @@ const routes = [
         name: 'AdminHero',
         component: AdminHero,
         meta: { title: 'Bannière d\'accueil' }
+      },
+      {
+        path: 'logs', // (/admin/logs) — réservé à l'Admin
+        name: 'AdminLogs',
+        component: AdminLogs,
+        meta: { title: 'Logs système', roles: ['Admin'] }
       },
       {
         path: 'profil', // (/admin/profil) 

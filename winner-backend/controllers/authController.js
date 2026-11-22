@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const db = require('../config/db');
+const { enregistrerLog } = require('../services/logger');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -26,6 +27,12 @@ exports.login = async (req, res) => {
       sameSite: 'strict',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000
+    });
+    await enregistrerLog({
+      req,
+      user: { id: user.id, nom: user.nom, email: user.email, role },
+      action: 'Connexion',
+      details: `Connexion réussie (${user.email})`
     });
     res.json({ message: 'Connexion réussie', user: { id: user.id, nom: user.nom, email: user.email, role, avatar: user.avatar } });
   } catch (error) {
