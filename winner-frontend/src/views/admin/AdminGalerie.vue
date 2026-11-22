@@ -43,6 +43,7 @@ import axios from 'axios'
 
 // --- CONFIGURATION API ---
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const BACKEND_URL = API_BASE_URL
 const API_URL = `${API_ROOT}/galerie`
@@ -95,7 +96,7 @@ const ajouterFichiers = async (event) => {
     await fetchMedias() // On rafraîchit la liste pour récupérer les URLs du serveur
   } catch (error) {
     console.error("Erreur lors de l'upload des fichiers :", error)
-    alert("Une erreur est survenue lors de l'upload.")
+    notify("Une erreur est survenue lors de l'upload.")
   } finally {
     isLoading.value = false
     event.target.value = '' // Réinitialiser l'input
@@ -104,14 +105,19 @@ const ajouterFichiers = async (event) => {
 
 // 3. Supprimer un média (DELETE)
 const supprimerMedia = async (id) => {
-  if (confirm("Voulez-vous vraiment supprimer ce fichier de la médiathèque ?")) {
+  if (await demanderConfirmation({
+    titre: 'Supprimer ce fichier ?',
+    message: 'Le fichier sera retiré définitivement de la médiathèque.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  })) {
     try {
       // CORRECTION : Ajout de getAuthHeaders() ici aussi
       await axios.delete(`${API_URL}/${id}`, getAuthHeaders())
       medias.value = medias.value.filter(m => m.id !== id)
     } catch (error) {
       console.error("Erreur lors de la suppression :", error)
-      alert("Impossible de supprimer ce fichier.")
+      notify("Impossible de supprimer ce fichier.")
     }
   }
 }

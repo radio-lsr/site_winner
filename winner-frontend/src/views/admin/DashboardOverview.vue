@@ -3,19 +3,19 @@
     <!-- Bannière de Bienvenue -->
     <div class="welcome-banner">
       <div class="banner-text">
-        <h2>Bonjour, Administrateur 👋</h2>
-        <p>WINNER MULTISERVICE - Tableau de bord global</p>
+        <h2>Bonjour, {{ estAdmin ? 'Administrateur' : 'Modérateur' }} 👋</h2>
+        <p>WINNER MULTISERVICE - {{ estAdmin ? 'Tableau de bord global' : 'Espace de modération' }}</p>
       </div>
       <div class="banner-actions">
-        <router-link to="/admin/produits" class="btn-yellow">Gérer les produits</router-link>
+        <router-link to="/admin/produits" class="btn-yellow">{{ estAdmin ? 'Gérer les produits' : 'Voir les produits' }}</router-link>
         <router-link to="/admin/commandes" class="btn-yellow">Voir les commandes</router-link>
-        <router-link to="/admin/galerie" class="btn-yellow">Ajouter un média</router-link>
+        <router-link v-if="estAdmin" to="/admin/galerie" class="btn-yellow">Ajouter un média</router-link>
       </div>
     </div>
 
     <!-- Grille de Statistiques -->
     <div class="stats-grid">
-      <div v-for="(stat, index) in stats" :key="index" class="stat-card">
+      <div v-for="(stat, index) in statsVisibles" :key="index" class="stat-card">
         <div :class="['stat-icon', stat.bg]">{{ stat.icon }}</div>
         <div class="stat-info">
           <span class="stat-label">{{ stat.label }}</span>
@@ -24,19 +24,65 @@
       </div>
     </div>
 
-    <!-- Section Graphiques -->
-    <div class="charts-section">
+    <!-- Section Graphiques (réservée à l'administrateur) -->
+    <div v-if="estAdmin" class="charts-section">
       <div class="chart-card">
-        <h3>Évolution des Ventes (2026)</h3>
+        <div class="chart-header">
+          <h3>Évolution des Ventes ({{ periodeCourbe === 'annuelle' ? '2026' : 'Ce mois' }})</h3>
+          <div class="chart-tabs">
+            <button :class="['chart-tab', periodeCourbe === 'mensuelle' && 'active']" @click="periodeCourbe = 'mensuelle'">Mensuelle</button>
+            <button :class="['chart-tab', periodeCourbe === 'annuelle' && 'active']" @click="periodeCourbe = 'annuelle'">Annuelle</button>
+          </div>
+        </div>
         <div class="chart-placeholder">
-          <div class="bar-chart">
-            <div v-for="(val, idx) in monthlySales" :key="idx" class="bar-col">
-              <div class="bar" :style="{ height: val.height }">
-                <span class="tooltip">{{ val.amount }}</span>
-              </div>
-              <span class="month">{{ val.month }}</span>
+          <div v-if="activeSales.length > 0" class="line-chart-wrap" @mouseleave="hoveredPoint = null">
+            <div v-if="hoveredPoint" class="chart-tooltip" :style="{ left: hoveredPoint.leftPct + '%' }">
+              <strong>{{ periodeCourbe === 'mensuelle' ? 'Jour ' + hoveredPoint.month : hoveredPoint.month }}</strong> : {{ hoveredPoint.amount }}
+            </div>
+            <svg
+              viewBox="0 0 500 180"
+              class="line-chart-svg"
+              preserveAspectRatio="none"
+              @mousemove="onChartMouseMove"
+            >
+              <defs>
+                <linearGradient id="salesAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f6a617" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="#f6a617" stop-opacity="0.02" />
+                </linearGradient>
+              </defs>
+              <line x1="20" y1="30" x2="480" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4" />
+              <line x1="20" y1="90" x2="480" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
+              <line x1="20" y1="150" x2="480" y2="150" stroke="#cbd5e1" />
+              <line
+                v-if="hoveredPoint"
+                :x1="hoveredPoint.x"
+                y1="20"
+                :x2="hoveredPoint.x"
+                y2="150"
+                stroke="#f6a617"
+                stroke-width="1.5"
+                stroke-dasharray="3 3"
+              />
+              <path v-if="salesAreaPath" :d="salesAreaPath" fill="url(#salesAreaGrad)" />
+              <path
+                v-if="salesLinePath"
+                :d="salesLinePath"
+                fill="none"
+                stroke="#f6a617"
+                stroke-width="3.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                style="filter: drop-shadow(0 3px 6px rgba(246, 166, 23, 0.35));"
+              />
+            </svg>
+            <div class="line-chart-months">
+              <span v-for="(val, idx) in activeSalesLabels" :key="idx" class="month">
+                {{ val }}
+              </span>
             </div>
           </div>
+          <p v-else class="text-muted">Aucune donnée de vente disponible</p>
         </div>
       </div>
 
@@ -85,7 +131,7 @@
                 <td class="fw-bold">#{{ order.id }}</td>
                 <td>{{ order.customer_name }}</td>
                 <td>{{ formatDate(order.created_at) }}</td>
-                <td>{{ order.total }} $</td>
+                <td>{{ formatPrix(order.total) }}</td>
                 <td>
                   <span :class="['badge', getStatusClass(order.status)]">
                     {{ order.status }}
@@ -123,7 +169,7 @@
                 </td>
                 <td>{{ product.category }}</td>
                 <td><span class="sales-pill">{{ product.total_sales }} vtes</span></td>
-                <td class="text-green fw-bold">{{ product.revenue }} $</td>
+                <td class="text-green fw-bold">{{ formatPrix(product.revenue) }}</td>
               </tr>
             </tbody>
           </table>
@@ -137,20 +183,64 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { API_URL as API_ROOT } from '@/services/config'
+import { formatPrix } from '@/services/currency'
+
+const estAdmin = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role === 'Admin'
+  } catch {
+    return false
+  }
+})
 
 // Définition des statistiques dynamiques
 const stats = ref([
-  { label: 'Produits actifs', value: 0, icon: '📦', bg: 'bg-blue' },
-  { label: 'Commandes', value: 0, icon: '🛒', bg: 'bg-green' },
-  { label: 'Articles & Tutos', value: 0, icon: '📝', bg: 'bg-yellow' },
-  { label: 'Clients inscrits', value: 0, icon: '👥', bg: 'bg-purple' },
-  { label: 'Photos Galerie', value: 0, icon: '🖼️', bg: 'bg-red' },
-  { label: 'Vidéos publiées', value: 0, icon: '📺', bg: 'bg-teal' },
-  { label: 'Ventes ce mois', value: '0 $', icon: '💰', bg: 'bg-orange' },
-  { label: 'Visites du site', value: 0, icon: '📈', bg: 'bg-light-green' },
+  { label: 'Produits actifs', value: 0, icon: '📦', bg: 'bg-blue', adminOnly: false },
+  { label: 'Commandes', value: 0, icon: '🛒', bg: 'bg-green', adminOnly: false },
+  { label: 'Articles & Tutos', value: 0, icon: '📝', bg: 'bg-yellow', adminOnly: false },
+  { label: 'Clients inscrits', value: 0, icon: '👥', bg: 'bg-purple', adminOnly: true },
+  { label: 'Photos Galerie', value: 0, icon: '🖼️', bg: 'bg-red', adminOnly: true },
+  { label: 'Vidéos publiées', value: 0, icon: '📺', bg: 'bg-teal', adminOnly: false },
+  { label: 'Ventes ce mois', value: '0 CDF', icon: '💰', bg: 'bg-orange', adminOnly: true },
+  { label: 'Visites du site', value: 0, icon: '📈', bg: 'bg-light-green', adminOnly: true },
 ])
 
+const statsVisibles = computed(() =>
+  estAdmin.value ? stats.value : stats.value.filter(s => !s.adminOnly)
+)
+
 const monthlySales = ref([])
+const dailySales = ref([])
+const periodeCourbe = ref('annuelle')
+const hoveredPoint = ref(null)
+
+const activeSales = computed(() =>
+  periodeCourbe.value === 'mensuelle' ? dailySales.value : monthlySales.value
+)
+
+const activeSalesLabels = computed(() => {
+  const list = activeSales.value
+  if (periodeCourbe.value !== 'mensuelle') return list.map(i => i.month)
+  return list.filter((_, idx) => idx === 0 || idx === list.length - 1 || (idx + 1) % 5 === 0).map(i => i.month)
+})
+
+const onChartMouseMove = (event) => {
+  const pts = salesCoords.value
+  if (!pts.length) return
+  const rect = event.currentTarget.getBoundingClientRect()
+  const relX = ((event.clientX - rect.left) / rect.width) * 500
+  let closest = pts[0]
+  let minDist = Math.abs(relX - pts[0].x)
+  for (const pt of pts) {
+    const d = Math.abs(relX - pt.x)
+    if (d < minDist) {
+      minDist = d
+      closest = pt
+    }
+  }
+  const leftPct = Math.min(84, Math.max(16, (closest.x / 500) * 100))
+  hoveredPoint.value = { ...closest, leftPct }
+}
 const recentOrders = ref([])
 const topProducts = ref([])
 const totalVisitors = ref(0)
@@ -159,6 +249,45 @@ const trafficSources = ref([
   { label: 'Réseaux Sociaux', percentage: 30, dotClass: 'bg-green' },
   { label: 'Moteurs de recherche', percentage: 25, dotClass: 'bg-yellow' }
 ])
+
+// Coordonnées SVG pour la courbe des ventes
+const salesCoords = computed(() => {
+  const items = activeSales.value
+  if (!items.length) return []
+  const left = 25
+  const right = 475
+  const top = 25
+  const bottom = 150
+  const spanX = items.length > 1 ? (right - left) / (items.length - 1) : 0
+  return items.map((item, idx) => {
+    const pct = Math.min(100, Math.max(0, Number(item.percentage) || 0))
+    const x = items.length > 1 ? left + idx * spanX : (left + right) / 2
+    const y = bottom - (pct / 100) * (bottom - top)
+    return { x: Math.round(x), y: Math.round(y), month: item.month, amount: item.amount }
+  })
+})
+
+const salesLinePath = computed(() => {
+  const pts = salesCoords.value
+  if (!pts.length) return ''
+  if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`
+  let d = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i]
+    const p1 = pts[i + 1]
+    const cx = (p0.x + p1.x) / 2
+    d += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`
+  }
+  return d
+})
+
+const salesAreaPath = computed(() => {
+  const pts = salesCoords.value
+  if (!pts.length || !salesLinePath.value) return ''
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  return `${salesLinePath.value} L ${last.x} 150 L ${first.x} 150 Z`
+})
 
 // Calcul dynamique du dégradé pour le camembert (donut)
 const trafficConicGradient = computed(() => {
@@ -185,24 +314,43 @@ const fetchDashboardData = async () => {
     stats.value[3].value = data.users || 0         // Utilisateurs (Clients)
     stats.value[4].value = data.photos || 0        // Photos (Backend à venir)
     stats.value[5].value = data.videos || 0        // Vidéos (Backend à venir)
-    stats.value[6].value = `${data.monthlySalesAmount || 0} $` 
+    stats.value[6].value = formatPrix(data.monthlySalesAmount || 0)
     stats.value[7].value = data.visits || 0
 
     // 2. Mise à jour des graphiques de ventes mensuelles avec vérification
     if (data.monthlySales && Array.isArray(data.monthlySales)) {
       monthlySales.value = data.monthlySales.map(item => ({
         month: item.month,
-        amount: `${item.amount} $`,
-        height: `${item.percentage}%` 
+        amount: formatPrix(item.amount),
+        percentage: item.percentage || 0,
+        height: `${item.percentage}%`
       }))
     } else {
       monthlySales.value = [] // Sécurité
+    }
+
+    if (data.dailySales && Array.isArray(data.dailySales)) {
+      dailySales.value = data.dailySales.map(item => ({
+        month: item.month,
+        amount: formatPrix(item.amount),
+        percentage: item.percentage || 0
+      }))
+    } else {
+      dailySales.value = []
     }
 
     // 3. Mise à jour des tableaux avec des valeurs par défaut
     recentOrders.value = data.recentOrders || []
     topProducts.value = data.topProducts || []
     totalVisitors.value = data.visits || 0
+    if (Array.isArray(data.trafficSources)) {
+      const classes = ['bg-blue', 'bg-green', 'bg-yellow']
+      trafficSources.value = data.trafficSources.map((s, idx) => ({
+        label: s.label,
+        percentage: s.percentage || 0,
+        dotClass: classes[idx] || 'bg-blue'
+      }))
+    }
 
   } catch (error) {
     console.error("Erreur lors de la récupération des données du tableau de bord :", error)
@@ -489,4 +637,26 @@ onMounted(() => {
 .badge-warning { background-color: #fef3c7; color: #92400e; }
 .badge-danger { background-color: #ffe4e6; color: #991b1b; }
 .badge-secondary { background-color: #f3f4f6; color: #374151; }
+.line-chart-wrap { position: relative; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.chart-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: #1f1443;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  z-index: 5;
+}
+.chart-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.chart-header h3 { margin: 0; }
+.chart-tabs { display: flex; gap: 6px; background: #f1f5f9; padding: 3px; border-radius: 8px; }
+.chart-tab { border: none; background: transparent; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; }
+.chart-tab.active { background: #fff; color: #1f1443; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.line-chart-svg { width: 100%; height: 180px; display: block; }
+.line-chart-months { display: flex; justify-content: space-between; padding: 0 14px; font-size: 12px; color: #64748b; font-weight: 500; }
 </style>

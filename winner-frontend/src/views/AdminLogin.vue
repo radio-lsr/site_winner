@@ -145,14 +145,14 @@ const gererConnexion = async () => {
       password: password.value
     });
 
-    // Seuls les comptes Admin peuvent entrer dans le back-office
-    if (!data.user || data.user.role !== 'Admin') {
+    // Seuls les comptes Admin et Modérateur peuvent entrer dans le back-office
+    if (!data.user || (data.user.role !== 'Admin' && data.user.role !== 'Modérateur')) {
       await authService.logout();
       erreur.value = "Ce compte n'a pas accès à l'espace d'administration.";
       return;
     }
-    
-    // Redirection vers le tableau de bord en cas de succès
+
+    // Redirection vers le tableau de bord adapté au rôle
     router.push('/admin');
   } catch (error) {
     // Récupération de l'erreur renvoyée par le backend (ex: "Mot de passe incorrect")

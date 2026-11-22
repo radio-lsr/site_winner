@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const db = require('../config/db');
+const { enregistrerLog } = require('../services/logger');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -18,7 +19,7 @@ exports.login = async (req, res) => {
     if (!user || user.statut !== 'Actif' || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect.' });
     }
-    const role = user.role || 'Utilisateur';
+    const role = user.role || 'Modérateur';
     const token = jwt.sign({ id: user.id, email: user.email, role, ver: Number(user.token_version || 0) }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
     res.cookie('winner_session', token, {
       httpOnly: true,
@@ -26,6 +27,12 @@ exports.login = async (req, res) => {
       sameSite: 'strict',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000
+    });
+    await enregistrerLog({
+      req,
+      user: { id: user.id, nom: user.nom, email: user.email, role },
+      action: 'Connexion',
+      details: `Connexion réussie (${user.email})`
     });
     res.json({ message: 'Connexion réussie', user: { id: user.id, nom: user.nom, email: user.email, role, avatar: user.avatar } });
   } catch (error) {

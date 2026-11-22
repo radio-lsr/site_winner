@@ -8,7 +8,17 @@
           <ul>
               <li><a href="#accueil">Accueil</a></li>
               <li><a href="#services">Nos Services</a></li>
-              <li><a href="#produits">Boutique</a></li>
+              <li class="nav-dropdown" @mouseenter="menuBoutiqueOuvert = true" @mouseleave="menuBoutiqueOuvert = false">
+                  <a href="#produits" @click="choisirCategorie('Toutes')">Boutique ▾</a>
+                  <ul v-show="menuBoutiqueOuvert" class="dropdown-menu">
+                      <li>
+                          <a href="#produits" @click="choisirCategorie('Toutes')">Tous les produits</a>
+                      </li>
+                      <li v-for="cat in categories" :key="cat">
+                          <a href="#produits" @click="choisirCategorie(cat)">{{ cat }}</a>
+                      </li>
+                  </ul>
+              </li>
               <li><a href="#galerie">Galerie</a></li>
               <li><a href="#articles">Conseils</a></li>
               <li><a href="#apropos">À Propos</a></li>
@@ -23,14 +33,27 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
+
 // Site vitrine : aucun compte client — le header ne gère que le panier.
 defineProps({
     cartItemCount: {
         type: Number,
         default: 0
+    },
+    categories: {
+        type: Array,
+        default: () => []
     }
 });
-defineEmits(['open-cart']);
+
+const emit = defineEmits(['open-cart', 'select-category']);
+const menuBoutiqueOuvert = ref(false);
+
+const choisirCategorie = (cat) => {
+    menuBoutiqueOuvert.value = false;
+    emit('select-category', cat);
+};
 </script>
 
 <style scoped>
@@ -50,5 +73,35 @@ nav ul li a:hover { color: #E31E24; }
     header { flex-direction: column; padding: 15px 20px; }
     nav ul { margin-top: 15px; flex-wrap: wrap; justify-content: center; }
     nav ul li { margin: 5px 10px; }
+}
+.nav-dropdown { position: relative; }
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 210px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    border: 1px solid #e2e8f0;
+    padding: 8px 0;
+    list-style: none;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.dropdown-menu li a {
+    display: block;
+    padding: 9px 16px;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.dropdown-menu li a:hover {
+    background: #f8fafc;
+    color: #1e3a8a;
 }
 </style>

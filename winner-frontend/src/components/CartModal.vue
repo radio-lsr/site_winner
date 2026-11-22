@@ -16,11 +16,11 @@
                           <h4>{{ item.nom }}</h4>
                           <p>Quantité : {{ item.quantite }}</p>
                       </div>
-                      <p class="item-prix">{{ item.prix * item.quantite }} $</p>
+                      <p class="item-prix">{{ formatPrix(item.prix * item.quantite) }}</p>
                       <button class="btn-supprimer" @click="$emit('remove-item', index)" title="Supprimer">🗑️</button>
                   </div>
                   <div class="panier-total">
-                      <h3>Total : {{ calculTotal }} $</h3>
+                      <h3>Total : {{ formatPrix(calculTotal) }}</h3>
                   </div>
               </div>
 
@@ -47,6 +47,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { formatPrix } from '../services/currency';
 
 const props = defineProps({
     panier: {

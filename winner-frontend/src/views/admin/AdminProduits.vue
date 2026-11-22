@@ -2,7 +2,8 @@
   <div class="page-section">
     <div class="page-header">
       <input type="text" placeholder="🔍 Rechercher un produit..." class="search-input" v-model="recherche" />
-      <button class="btn-yellow" @click="ouvrirModalAjout">➕ Nouveau Produit</button>
+      <button v-if="estAdmin" class="btn-yellow" @click="ouvrirModalAjout">➕ Nouveau Produit</button>
+      <span v-else class="lecture-seule">👁️ Mode lecture seule</span>
     </div>
     
     <!-- Fenêtre Modale (Ajout / Modification) -->
@@ -52,8 +53,8 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Prix ($)</label>
-              <input v-model="formProduit.prix" type="number" step="0.01" min="0" required placeholder="0.00" :disabled="isLoading" />
+              <label>Prix (CDF)</label>
+              <input v-model="formProduit.prix" type="number" step="1" min="0" required placeholder="Ex: 45000" :disabled="isLoading" />
             </div>
             
             <div v-if="formProduit.enSolde" class="form-group fade-in">
@@ -110,8 +111,8 @@
           
           <td>
             <div class="price-container">
-              <span v-if="produit.discount > 0" class="old-price">{{ Number(produit.prix).toFixed(2) }} $</span>
-              <span class="current-price">{{ calculerPrixRemise(produit.prix, produit.discount).toFixed(2) }} $</span>
+              <span v-if="produit.discount > 0" class="old-price">{{ formatPrix(produit.prix) }}</span>
+              <span class="current-price">{{ formatPrix(calculerPrixRemise(produit.prix, produit.discount)) }}</span>
             </div>
           </td>
           
@@ -140,8 +141,8 @@
           </td>
 
           <td>
-            <button class="action-btn" title="Modifier" @click="ouvrirModalEdition(produit)">✏️</button>
-            <button class="action-btn" title="Supprimer" @click="supprimerProduit(produit.id)">🗑️</button>
+            <button v-if="estAdmin" class="action-btn" title="Modifier" @click="ouvrirModalEdition(produit)">✏️</button>
+            <button v-if="estAdmin" class="action-btn" title="Supprimer" @click="supprimerProduit(produit.id)">🗑️</button>
           </td>
         </tr>
       </tbody>
@@ -155,11 +156,23 @@ import axios from 'axios'
 
 // --- CONFIGURATION API ---
 import { API_URL as API_ROOT, API_BASE_URL } from '@/services/config'
+import { formatPrix } from '@/services/currency'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`
 
 const getAuthHeaders = () => ({ withCredentials: true })
+
+// Seul l'administrateur peut créer, modifier ou supprimer un produit ;
+// le modérateur consulte la liste en lecture seule.
+const estAdmin = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role === 'Admin';
+  } catch {
+    return false;
+  }
+})
 
 // --- DONNÉES ---
 const produits = ref([])
@@ -266,7 +279,7 @@ const soumettreProduit = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la sauvegarde :", error)
-    alert("Une erreur est survenue lors de l'enregistrement.")
+    notify("Une erreur est survenue lors de l'enregistrement.")
   } finally {
     isLoading.value = false
   }
@@ -274,13 +287,18 @@ const soumettreProduit = async () => {
 
 // --- SUPPRESSION API ---
 const supprimerProduit = async (id) => {
-  if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
+  if (await demanderConfirmation({
+    titre: 'Supprimer ce produit ?',
+    message: 'Le produit sera retiré définitivement de la boutique.',
+    labelConfirmer: 'Supprimer',
+    dangereux: true
+  })) {
     try {
       await axios.delete(`${API_URL}/${id}`, getAuthHeaders())
       produits.value = produits.value.filter(p => p.id !== id)
     } catch (error) {
       console.error("Erreur lors de la suppression :", error)
-      alert("Impossible de supprimer le produit.")
+      notify("Impossible de supprimer le produit.")
     }
   }
 }
@@ -295,7 +313,7 @@ const toggleDisponibilite = async (produit) => {
   } catch (error) {
     console.error("Erreur lors de la mise à jour de disponibilité :", error)
     produit.disponible = ancienneValeur
-    alert("Impossible de modifier la disponibilité.")
+    notify("Impossible de modifier la disponibilité.")
   }
 }
 
@@ -325,6 +343,7 @@ const formatImageUrl = (imagePath) => {
 .search-input:focus { border-color: #241a4a; }
 
 .btn-yellow { background-color: #f6a617; color: #1f1443; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.lecture-seule { background-color: #e0f2fe; color: #0369a1; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; }
 .btn-yellow:hover { background-color: #e09612; }
 .btn-yellow:disabled { opacity: 0.6; cursor: not-allowed; }
 

@@ -142,7 +142,7 @@
               <div class="stat-icon bg-orange">💰</div>
               <div class="stat-info">
                 <span class="stat-label">Ventes ce mois</span>
-                <span class="stat-value">1 250 $</span>
+                <span class="stat-value">1 250 000 CDF</span>
               </div>
             </div>
             <div class="stat-card">
@@ -178,7 +178,7 @@
                 <td><img src="/prod.webp" alt="Produit" class="table-img" /></td>
                 <td>Huile Moteur Quartz 9000</td>
                 <td>Lubrifiants</td>
-                <td>45.00 $</td>
+                <td>45 000 CDF</td>
                 <td><span class="stock in-stock">15 en stock</span></td>
                 <td>
                   <button class="action-btn edit" title="Modifier">✏️</button>
@@ -189,7 +189,7 @@
                 <td><img src="/prod1.webp" alt="Produit" class="table-img" /></td>
                 <td>Filtre à Huile Total</td>
                 <td>Accessoires</td>
-                <td>12.50 $</td>
+                <td>12 500 CDF</td>
                 <td><span class="stock low-stock">3 en stock</span></td>
                 <td>
                   <button class="action-btn edit" title="Modifier">✏️</button>
@@ -223,7 +223,7 @@
                 <td><strong>#CMD-0042</strong></td>
                 <td>24 Juil. 2026</td>
                 <td>Jean Dupont</td>
-                <td>90.00 $</td>
+                <td>90 000 CDF</td>
                 <td><span class="badge pending">En attente</span></td>
                 <td>
                   <button class="action-btn view" title="Voir les détails">👁️</button>
@@ -233,7 +233,7 @@
                 <td><strong>#CMD-0041</strong></td>
                 <td>23 Juil. 2026</td>
                 <td>Garage Auto Plus</td>
-                <td>450.00 $</td>
+                <td>450 000 CDF</td>
                 <td><span class="badge success">Livrée</span></td>
                 <td>
                   <button class="action-btn view" title="Voir les détails">👁️</button>

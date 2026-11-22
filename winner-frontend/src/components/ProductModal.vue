@@ -18,10 +18,10 @@
                   </p>
                   <!-- Prix en promotion : ancien prix barré + nouveau prix -->
                   <p v-if="enPromo" class="prix-modal">
-                      <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }} $</span>
-                      <span class="prix-actuel">{{ formatPrix(produit.prix) }} $</span>
+                      <span class="prix-barre">{{ formatPrix(produit.prixOriginal) }}</span>
+                      <span class="prix-actuel">{{ formatPrix(produit.prix) }}</span>
                   </p>
-                  <p v-else class="prix-modal">{{ produit.prix }} $</p>
+                  <p v-else class="prix-modal">{{ formatPrix(produit.prix) }}</p>
                   <p class="specs">{{ produit.specs }}</p>
                   
                   <div class="commande-action">
@@ -41,6 +41,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import EspaceAvis from './EspaceAvis.vue';
+import { formatPrix } from '../services/currency';
 
 const props = defineProps({
     produit: {
@@ -53,7 +54,6 @@ const emit = defineEmits(['close', 'add-to-cart']);
 const quantiteChoisie = ref(1);
 
 const enPromo = computed(() => Boolean(props.produit && props.produit.prixOriginal && props.produit.prixOriginal > props.produit.prix));
-const formatPrix = (v) => Number(v).toFixed(2);
 
 const ajouter = () => {
     const q = parseInt(quantiteChoisie.value, 10);

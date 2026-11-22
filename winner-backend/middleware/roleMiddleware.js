@@ -21,4 +21,9 @@ const requireRole = (...rolesAutorises) => {
 // Raccourci pratique pour le rôle administrateur
 const requireAdmin = requireRole('Admin');
 
-module.exports = { requireRole, requireAdmin };
+// Raccourci pour le personnel du back-office : administrateurs et modérateurs.
+// Le modérateur gère les commandes, les commentaires et les articles,
+// et consulte les produits en lecture seule.
+const requireAdminOrModerator = requireRole('Admin', 'Modérateur');
+
+module.exports = { requireRole, requireAdmin, requireAdminOrModerator };

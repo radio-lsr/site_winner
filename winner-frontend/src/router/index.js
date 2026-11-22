@@ -15,6 +15,7 @@ import AdminUtilisateurs from '@/views/admin/AdminUtilisateurs.vue';
 import AdminMessages from '@/views/admin/AdminMessages.vue';
 import AdminAvis from '@/views/admin/AdminAvis.vue';
 import AdminHero from '@/views/admin/AdminHero.vue';
+import AdminLogs from '@/views/admin/AdminLogs.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
 
 const routes = [
@@ -94,6 +95,12 @@ const routes = [
         meta: { title: 'Bannière d\'accueil' }
       },
       {
+        path: 'logs', // (/admin/logs) — réservé à l'Admin
+        name: 'AdminLogs',
+        component: AdminLogs,
+        meta: { title: 'Logs système', roles: ['Admin'] }
+      },
+      {
         path: 'profil', // (/admin/profil) 
         name: 'ProfilUtilisateur',
         component: ProfilUtilisateur,
@@ -118,19 +125,27 @@ router.beforeEach((to) => {
   } catch {
     user = null;
   }
-  const isAdmin = Boolean(user && user.role === 'Admin');
+  const role = user?.role || '';
+  const isStaff = role === 'Admin' || role === 'Modérateur';
   const isAuthenticated = Boolean(user);
 
   // Vérifie si la route actuelle OU un de ses parents possède la propriété requiresAuth
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
-  if (requiresAuth && (!isAuthenticated || !isAdmin)) {
-    // Non connecté, ou connecté sans le rôle Admin → page de connexion
+  if (requiresAuth && (!isAuthenticated || !isStaff)) {
+    // Non connecté, ou connecté sans rôle d'accès au back-office → page de connexion
     return '/admin/login';
   }
 
-  // Bonus : Empêche un admin DÉJÀ connecté d'accéder à la page de login
-  if (to.path === '/admin/login' && isAuthenticated && isAdmin) {
+  // Contrôle fin par page : chaque sous-page déclare les rôles autorisés (meta.roles)
+  const rolesRequis = [...to.matched].reverse().find(record => record.meta.roles)?.meta.roles;
+  if (requiresAuth && rolesRequis && !rolesRequis.includes(role)) {
+    // Le modérateur est redirigé vers la première page de son périmètre (commandes)
+    return role === 'Modérateur' ? '/admin/commandes' : '/admin/login';
+  }
+
+  // Bonus : Empêche un membre du personnel DÉJÀ connecté d'accéder à la page de login
+  if (to.path === '/admin/login' && isStaff) {
     return '/admin';
   }
 

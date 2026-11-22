@@ -30,7 +30,7 @@
             <div class="info-item">
               <span class="label">Montant total :</span>
               <!-- Vérification de sécurité avec ?. au cas où le montant ne serait pas encore chargé en nombre -->
-              <strong class="price">{{ Number(commandeSelectionnee.montant).toFixed(2) }} $</strong>
+              <strong class="price">{{ formatPrix(commandeSelectionnee.montant) }}</strong>
             </div>
             <div class="info-item">
               <span class="label">Date :</span>
@@ -111,7 +111,7 @@
             </div>
           </td>
           <td class="address-cell">{{ cmd.adresse }}</td>
-          <td><strong>{{ Number(cmd.montant).toFixed(2) }} $</strong></td>
+          <td><strong>{{ formatPrix(cmd.montant) }}</strong></td>
           <td>
             <span v-if="cmd.livreur" class="driver-badge">🛵 {{ cmd.livreur }}</span>
             <span v-else class="text-muted">Non assigné</span>
@@ -143,6 +143,8 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios' // Ajout d'Axios pour les requêtes HTTP
 import { API_URL } from '@/services/config'
 import { syncCommandesEnAttente } from '@/services/notifications'
+import { formatPrix } from '@/services/currency'
+import { notify, demanderConfirmation } from '@/services/dialog'
 
 // Injection du token JWT (les routes commandes exigent le rôle Admin)
 const getAuthHeaders = () => ({ withCredentials: true })
@@ -198,7 +200,7 @@ const sauvegarderCommande = async () => {
     fermerModal()
   } catch (error) {
     console.error("Erreur lors de la mise à jour :", error)
-    alert("Une erreur est survenue lors de la sauvegarde.")
+    notify("Une erreur est survenue lors de la sauvegarde.")
   } finally {
     isLoading.value = false
   }
@@ -206,7 +208,12 @@ const sauvegarderCommande = async () => {
 
 // 3. Annuler une commande directement depuis le tableau
 const annulerCommande = async (id) => {
-  if (confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
+  if (await demanderConfirmation({
+    titre: 'Annuler cette commande ?',
+    message: 'La commande passera au statut Annulée.',
+    labelConfirmer: 'Annuler la commande',
+    dangereux: true
+  })) {
     try {
       // Appel PUT pour changer uniquement le statut (authentifié)
       await axios.put(`${API_COMMANDES}/${id}`, { statut: 'Annulée' }, getAuthHeaders())
@@ -219,7 +226,7 @@ const annulerCommande = async (id) => {
       syncCommandesEnAttente(commandes.value)
     } catch (error) {
       console.error("Erreur lors de l'annulation :", error)
-      alert("Impossible d'annuler la commande.")
+      notify("Impossible d'annuler la commande.")
     }
   }
 }
@@ -266,7 +273,12 @@ const fermerModal = () => {
 }
 
 const annulerDepuisModale = async () => {
-  if (confirm("Êtes-vous sûr de vouloir annuler cette commande ?")) {
+  if (await demanderConfirmation({
+    titre: 'Annuler cette commande ?',
+    message: 'La commande passera au statut Annulée.',
+    labelConfirmer: 'Annuler la commande',
+    dangereux: true
+  })) {
     formCommande.value.statut = 'Annulée'
     await sauvegarderCommande() // Réutilise la fonction d'API existante
   }

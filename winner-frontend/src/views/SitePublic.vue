@@ -3,7 +3,9 @@
     <!-- En-tête -->
     <Header
         :cartItemCount="panier.length"
-        @open-cart="afficherPanierModal = true" />
+        :categories="categoriesBoutique"
+        @open-cart="afficherPanierModal = true"
+        @select-category="cat => categorieBoutiqueActive = cat" />
     
     <!-- Section Héroïque -->
     <Hero />
@@ -12,7 +14,7 @@
     <Services :listeServices="listeServices" />
     
     <!-- Boutique / Produits -->
-    <Boutique :listeProduits="listeProduits" @select-product="ouvrirDetailsProduit" />
+    <Boutique :listeProduits="listeProduits" :categorieActive="categorieBoutiqueActive" @select-product="ouvrirDetailsProduit" />
     
     <!-- Galerie -->
     <Galerie :listeGalerie="listeGalerie" />
@@ -54,9 +56,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { API_URL, formatImageUrl } from '../services/config';
+import { notify } from '../services/dialog';
 
 import Header from '../components/Header.vue';
 import Hero from '../components/Hero.vue';
@@ -70,11 +73,17 @@ import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
 
+const categorieBoutiqueActive = ref('Toutes');
+const categoriesBoutique = computed(() => {
+  const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
+  return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
+});
+
 const listeProduits = ref([
-    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
-    { id: 2, nom: "Liquide de Refroidissement", prix: 15, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
-    { id: 3, nom: "Nettoyant Injecteur", prix: 12, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
-    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
+    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
+    { id: 2, nom: "Liquide de Refroidissement", prix: 15000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
+    { id: 3, nom: "Nettoyant Injecteur", prix: 12000, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
+    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
 ]);
 
 const listeGalerie = ref([
@@ -141,8 +150,9 @@ const ajouterAuPanier = (articleAvecQuantite) => {
     } else {
         panier.value.push({ ...articleAvecQuantite });
     }
+    // On revient à la page des produits : la fiche se ferme et le panier
+    // n'est pas ouvert automatiquement (bouton « Panier » dans l'en-tête).
     fermerDetailsProduit();
-    afficherPanierModal.value = true;
 };
 
 const supprimerDuPanier = (index) => {
@@ -166,17 +176,22 @@ const confirmerCommande = async (formData) => {
                 quantite: item.quantite
             }))
         });
-        commandeReussie.value = true;
+        panier.value = [];
+        notify('Votre commande a été envoyée avec succès !', 'success');
     } catch (error) {
         console.error("Erreur lors de l'envoi de la commande :", error);
-        alert("Impossible d'enregistrer la commande. Veuillez réessayer ou nous contacter par téléphone.");
-        return;
-    }
-    setTimeout(() => {
-        panier.value = [];
+        const detail = error.response?.data?.error;
+        notify(
+            detail
+                ? `Impossible d'enregistrer la commande : ${detail} Votre panier est conservé.`
+                : "Impossible d'enregistrer la commande. Votre panier est conservé : vous pouvez réessayer ou nous contacter par téléphone.",
+            'error'
+        );
+    } finally {
+        // Comme pour l'ajout au panier, on revient à la page des produits.
         commandeReussie.value = false;
         afficherPanierModal.value = false;
-    }, 3500);
+    }
 };
 
 // ============================================================
@@ -265,6 +280,17 @@ const chargerServices = async () => {
 const listeServices = ref([]);
 
 onMounted(() => {
+  if (!sessionStorage.getItem('winner_visite_enregistree')) {
+    sessionStorage.setItem('winner_visite_enregistree', '1');
+    const refUrl = (document.referrer || '').toLowerCase();
+    let source = 'Direct';
+    if (/facebook|instagram|tiktok|twitter|x\.com|linkedin|whatsapp|t\.me|youtube/.test(refUrl)) {
+      source = 'Réseaux Sociaux';
+    } else if (/google|bing|yahoo|duckduckgo|ecosia|baidu/.test(refUrl)) {
+      source = 'Moteurs de recherche';
+    }
+    axios.post(`${API_URL}/dashboard/visite`, { source }).catch(() => {});
+  }
     chargerProduits();
     chargerGalerie();
     chargerArticles();

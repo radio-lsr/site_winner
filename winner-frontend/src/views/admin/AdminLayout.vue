@@ -31,17 +31,17 @@
             <span v-if="!sidebarRetractee" class="nav-label">Conseils & Tutos</span>
           </router-link>
           
-          <router-link to="/admin/galerie" class="nav-item" active-class="active" title="Galerie Médias">
+          <router-link v-if="estAdmin" to="/admin/galerie" class="nav-item" active-class="active" title="Galerie Médias">
             <span class="icon">🖼️</span>
             <span v-if="!sidebarRetractee" class="nav-label">Galerie Médias</span>
           </router-link>
 
-          <router-link to="/admin/utilisateurs" class="nav-item" active-class="active" title="Utilisateurs">
+          <router-link v-if="estAdmin" to="/admin/utilisateurs" class="nav-item" active-class="active" title="Utilisateurs">
             <span class="icon">👥</span>
             <span v-if="!sidebarRetractee" class="nav-label">Utilisateurs</span>
           </router-link>
 
-          <router-link to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
+          <router-link v-if="estAdmin" to="/admin/messages" class="nav-item" active-class="active" title="Messages & Devis">
             <span class="icon">✉️<span v-if="notificationState.messagesNonLus > 0" class="nav-badge">{{ notificationState.messagesNonLus }}</span></span>
             <span v-if="!sidebarRetractee" class="nav-label">Messages & Devis</span>
           </router-link>
@@ -51,18 +51,20 @@
             <span v-if="!sidebarRetractee" class="nav-label">Avis & Commentaires</span>
           </router-link>
 
-          <router-link to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
+          <router-link v-if="estAdmin" to="/admin/hero" class="nav-item" active-class="active" title="Bannière d'accueil">
             <span class="icon">🖼️</span>
             <span v-if="!sidebarRetractee" class="nav-label">Bannière d'accueil</span>
+          </router-link>
+
+          <router-link v-if="estAdmin" to="/admin/logs" class="nav-item" active-class="active" title="Logs">
+            <span class="icon">📜</span>
+            <span v-if="!sidebarRetractee" class="nav-label">Logs</span>
           </router-link>
         </nav>
       </div>
 
       <div class="sidebar-footer">
         <span v-if="!sidebarRetractee" class="version">v 1.0 • WINNER ERP</span>
-        <button @click="deconnexion" class="btn-logout" :title="sidebarRetractee ? 'Déconnexion' : ''" :disabled="isLoading">
-          🚪 <span v-if="!sidebarRetractee">Déconnexion</span>
-        </button>
       </div>
     </aside>
 
@@ -219,6 +221,17 @@ onUnmounted(() => {
 });
 
 const titrePage = computed(() => route.meta.title || 'Tableau de bord');
+
+// Rôle du membre du personnel connecté : détermine les entrées de menu visibles.
+// Le modérateur ne voit que son périmètre (produits, commandes, articles, avis & commentaires).
+const roleConnecte = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem('user'))?.role || adminInfo.value.role || '';
+  } catch {
+    return adminInfo.value.role || '';
+  }
+});
+const estAdmin = computed(() => roleConnecte.value === 'Admin');
 
 const deconnexion = async () => {
   isLoading.value = true;

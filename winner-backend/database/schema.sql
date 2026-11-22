@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   prenom VARCHAR(150) DEFAULT '',
   email VARCHAR(190) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('Admin', 'Utilisateur') NOT NULL DEFAULT 'Utilisateur',
+  role ENUM('Admin', 'Modérateur') NOT NULL DEFAULT 'Modérateur',
   statut ENUM('Actif', 'Inactif') NOT NULL DEFAULT 'Actif',
   telephone VARCHAR(50) DEFAULT '',
   bio TEXT,
@@ -156,5 +156,22 @@ CREATE TABLE IF NOT EXISTS commentaires_articles (
 CREATE TABLE IF NOT EXISTS hero_images (
   id INT AUTO_INCREMENT PRIMARY KEY,
   image VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT DEFAULT NULL,
+  user_nom VARCHAR(150) DEFAULT NULL,
+  user_role VARCHAR(50) DEFAULT NULL,
+  action VARCHAR(120) NOT NULL,
+  details TEXT DEFAULT NULL,
+  ip VARCHAR(64) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS visites (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  source ENUM('Direct', 'Réseaux Sociaux', 'Moteurs de recherche') NOT NULL DEFAULT 'Direct',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

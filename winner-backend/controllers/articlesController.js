@@ -4,10 +4,10 @@ const path = require('path');
 
 // 1. Récupérer les articles
 // - Visiteur anonyme : uniquement les articles au statut "Publié"
-// - Admin connecté : tous les articles (brouillons inclus)
+// - Personnel connecté (Admin ou Modérateur) : tous les articles (brouillons inclus)
 exports.getAllArticles = async (req, res) => {
   try {
-    const estAdmin = req.user && req.user.role === 'Admin';
+    const estAdmin = req.user && (req.user.role === 'Admin' || req.user.role === 'Modérateur');
     const colonnesPubliques = 'id, titre, contenu, type_article, fichier_video, image_couverture, statut, created_at';
     const [rows] = estAdmin
       ? await db.query(`SELECT ${colonnesPubliques} FROM articles ORDER BY id DESC`)

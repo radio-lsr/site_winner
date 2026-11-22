@@ -2,6 +2,10 @@
 
 Monorepo : API Express 5 (`winner-backend`) et application Vue 3 (`winner-frontend`). Le site est prévu pour être lancé localement sous Windows/PowerShell, ou entièrement dans Docker.
 
+**Devise :** les prix affichés et saisis dans l'administration sont en francs congolais, avec le code `CDF` après le montant. Les montants enregistrés en base sont des CDF; l'application n'applique aucune conversion automatique. Le formatage est centralisé dans `winner-frontend/src/services/currency.js`.
+
+**Commandes :** les produits affichés par défaut si l'API est vide sont de simples exemples d'affichage. Le backend valide chaque article d'une commande contre la table `produits` (statut actif et stock suffisant) : ajoutez vos produits dans `/admin/produits` avant de tester une commande, sinon l'API répond « Un produit de la commande est indisponible ».
+
 ## 🐳 Lancement Docker (recommandé)
 
 Prérequis : Docker Desktop démarré. Au premier lancement, créez des secrets propres à votre installation :

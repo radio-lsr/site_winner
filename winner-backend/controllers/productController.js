@@ -2,10 +2,11 @@ const db = require('../config/db');
 
 // 1. Récupérer les produits (GET)
 // - Visiteur anonyme : uniquement les produits actifs (visibles en boutique)
-// - Admin connecté : tous les produits
+// - Personnel connecté (Admin ou Modérateur) : tous les produits
+//   (le modérateur les consulte en lecture seule)
 exports.getAllProducts = async (req, res) => {
   try {
-    const estAdmin = req.user && req.user.role === 'Admin';
+    const estAdmin = req.user && (req.user.role === 'Admin' || req.user.role === 'Modérateur');
     // Note moyenne + nombre d'avis par produit (affichés en boutique)
     const selectAvis = `SELECT p.*,
       (SELECT ROUND(AVG(a.note), 1) FROM avis_produits a WHERE a.produit_id = p.id) AS note_moyenne,
