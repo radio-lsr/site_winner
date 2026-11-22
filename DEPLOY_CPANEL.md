@@ -75,7 +75,7 @@ Dans cPanel Terminal/SSH, depuis le répertoire backend réel :
 ```bash
 cd ~/winner-backend
 npm ci --omit=dev
-mkdir -p uploads
+mkdir -p uploads1
 chmod 750 uploads
 npm run db:init
 npm run db:seed
@@ -88,7 +88,7 @@ Si cPanel ne transmet pas ses variables Node au Terminal, définissez aussi temp
 Vérifiez l'API :
 
 ```text
-https://api.winnermutiservice.com/
+https://api.winnermultiservice.com/
 ```
 
 Elle doit renvoyer le JSON de statut de l'API. Les fichiers `/uploads/...` seront servis par l'API sur le sous-domaine `api`.
@@ -104,7 +104,7 @@ git switch main
 git pull origin main
 cd winner-frontend
 npm ci
-$env:VITE_API_URL = "https://api.winnermutiservice.com"
+$env:VITE_API_URL = "https://api.winnermultiservice.com"
 npm run build
 Remove-Item Env:VITE_API_URL
 ```
