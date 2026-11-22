@@ -94,6 +94,7 @@
       <thead>
         <tr>
           <th>Image</th>
+          <th>Code-Produit</th>
           <th>Nom du produit</th>
           <th>Catégorie</th>
           <th>Prix</th>
@@ -105,16 +106,16 @@
       </thead>
       <tbody>
         <tr v-if="produitsFiltres.length === 0">
-          <td colspan="8" style="text-align: center; color: #6b7280; padding: 30px;">
+          <td colspan="9" style="text-align: center; color: #6b7280; padding: 30px;">
             Aucun produit trouvé.
           </td>
         </tr>
         <tr v-else v-for="produit in produitsFiltres" :key="produit.id">
           <!-- CORRECTION : Utilisation de formatImageUrl pour afficher la bonne URL -->
           <td><img :src="formatImageUrl(produit.image)" :alt="produit.nom" class="table-img" /></td>
+          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">PRD-{{ String(produit.id).padStart(4, '0') }}</span></td>
           <td>
             <strong>{{ produit.nom }}</strong>
-            <div style="font-size: 11px; color: #64748b; font-weight: 600;">Code : PRD-{{ String(produit.id).padStart(4, '0') }}</div>
             <div class="text-muted" style="font-size: 11px; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               {{ produit.description }}
             </div>
