@@ -19,7 +19,10 @@ const path = require('path');
   if (engine === 'sqlite') {
     try {
       // require de la couche DB : elle crée et initialise winner.db automatiquement
-      require('../config/db');
+      const db = require('../config/db');
+      // Catégories de boutique + transfert des familles dans description.
+      const { appliquerMigrationProduits } = require('./migration-produits');
+      await appliquerMigrationProduits(db);
       console.log('✅ Base SQLite prête. Vous pouvez lancer : npm run db:seed');
       process.exit(0);
     } catch (err) {
@@ -57,6 +60,10 @@ const path = require('path');
       UPDATE users SET role = 'Modérateur' WHERE role = 'Utilisateur';
       ALTER TABLE users MODIFY COLUMN role ENUM('Admin', 'Modérateur') NOT NULL DEFAULT 'Modérateur';
     `);
+
+    // Catégories de boutique + transfert des familles détaillées dans description.
+    const { appliquerMigrationProduits } = require('./migration-produits');
+    await appliquerMigrationProduits(conn);
 
     console.log('✅ Base "winner_db" et toutes les tables créées avec succès.');
     process.exit(0);

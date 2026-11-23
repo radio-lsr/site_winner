@@ -21,8 +21,14 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS produits (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- Référence du produit (ex. PRD-0012). Unique : un produit ne peut être
+  -- enregistré qu'une fois ; l'import écrase alors l'existant et additionne
+  -- les quantités en stock.
+  code TEXT DEFAULT NULL,
   nom TEXT NOT NULL,
   categorie TEXT DEFAULT 'Lubrifiants',
+  -- Famille détaillée du tarif (ex. « Huiles hydrauliques industrielles ») :
+  -- la boutique ne filtre que sur Lubrifiants / Produits d'entretien / Accessoires.
   description TEXT,
   prix REAL NOT NULL DEFAULT 0,
   discount INTEGER NOT NULL DEFAULT 0,
@@ -33,6 +39,9 @@ CREATE TABLE IF NOT EXISTS produits (
   user_id INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+-- NB : l'index unique sur produits.code est créé par la migration
+-- winner-backend/database/migration-produits.js (appliquerMigrationCode), qui
+-- ajoute la colonne aux bases existantes avant de créer l'index.
 
 CREATE TABLE IF NOT EXISTS articles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,6 +75,8 @@ CREATE TABLE IF NOT EXISTS commandes (
   ref TEXT DEFAULT NULL,
   client_nom TEXT NOT NULL,
   client_telephone TEXT NOT NULL,
+  client_email TEXT DEFAULT NULL,
+  mode_retrait TEXT NOT NULL DEFAULT 'Livraison' CHECK (mode_retrait IN ('Livraison', 'Réservation')),
   adresse_livraison TEXT NOT NULL,
   date_livraison TEXT DEFAULT NULL,
   articles TEXT NOT NULL,

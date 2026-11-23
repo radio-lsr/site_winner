@@ -1,4 +1,264 @@
 const db = require('../config/db');
+const path = require('path');
+const XLSX = require('xlsx');
+
+// ------------------------------------------------------------------
+// Catégories de la boutique
+// ------------------------------------------------------------------
+// Les familles détaillées du tarif (« Huiles hydrauliques industrielles »,
+// « Huiles TP », « Graisses multi-usages »…) sont désormais conservées dans
+// `description` ; `categorie` ne sert plus qu'au filtre de la boutique.
+const { CATEGORIES_BOUTIQUE, CATEGORIE_DEFAUT, categorieDepuisFamille } = require('../database/migration-produits');
+
+// Ramène une valeur saisie (formulaire ou import) à une catégorie de boutique.
+// Les anciennes familles sont reclassées par leur contenu ; toute valeur
+// hors liste est repliée sur la catégorie par défaut.
+const normaliserCategorie = (valeur, nom) => {
+  const brut = String(valeur ?? '').trim();
+  if (!brut) return CATEGORIE_DEFAUT;
+  if (CATEGORIES_BOUTIQUE.includes(brut)) return brut;
+  return categorieDepuisFamille(brut, nom || '');
+};
+
+// Normalise une référence produit : « prd-0012 » -> « PRD-0012 ».
+const normaliserCode = (valeur) => String(valeur ?? '').trim().toUpperCase();
+
+// ------------------------------------------------------------------
+// Import en masse de produits depuis un fichier CSV ou Excel.
+// ------------------------------------------------------------------
+
+// Taille maximale d'un import (nombre de lignes de données).
+const MAX_LIGNES_IMPORT = 500;
+
+// Correspondance des en-têtes (normalisés : minuscules, sans accents,
+// sans espaces/tirets) vers les champs attendus.
+const ALIAS_COLONNES = {
+  code: 'code',
+  codeproduit: 'code',
+  reference: 'code',
+  ref: 'code',
+  sku: 'code',
+  nom: 'nom',
+  name: 'nom',
+  produit: 'nom',
+  designation: 'nom',
+  libelle: 'nom',
+  libelleproduit: 'nom',
+  categorie: 'categorie',
+  category: 'categorie',
+  description: 'description',
+  desc: 'description',
+  prix: 'prix',
+  price: 'prix',
+  prixcdf: 'prix',
+  discount: 'discount',
+  remise: 'discount',
+  promotion: 'discount',
+  solde: 'discount',
+  stock: 'stock',
+  quantite: 'stock',
+  qte: 'stock',
+  quantity: 'stock',
+  statut: 'statut',
+  disponible: 'statut',
+  actif: 'statut',
+  etat: 'statut',
+  image: 'image',
+  imageproduit: 'image',
+  urlimage: 'image',
+  imageurl: 'image'
+};
+
+const normaliserCle = (valeur) => String(valeur ?? '')
+  .replace(/^\ufeff/, '') // BOM résiduel
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[\s_\-./]+/g, '');
+
+// Indique si un buffer est un texte UTF-8 valide (sinon, on suppose un
+// export Windows-1252, typique des anciens Excel français).
+const estUtf8 = (buffer) => {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Extrait un nombre d'une cellule : accepte "45000", "45 000", "45,50",
+// "45.5", ou un vrai nombre issu d'Excel.
+const parseNombre = (valeur) => {
+  if (typeof valeur === 'number' && Number.isFinite(valeur)) return valeur;
+  const brut = String(valeur ?? '').trim();
+  if (!brut) return null;
+  const nettoye = brut.replace(/\s/g, '').replace(',', '.');
+  const correspondance = nettoye.match(/-?\d+(?:\.\d+)?/);
+  if (!correspondance) return null;
+  const n = Number(correspondance[0]);
+  return Number.isFinite(n) ? n : null;
+};
+
+// Convertit une cellule "statut/disponible" en état base ('actif'/'inactif').
+const parseStatut = (valeur) => {
+  const brut = String(valeur ?? '').trim().toLowerCase();
+  if (!brut) return 'actif';
+  return ['inactif', 'non', 'false', '0', 'rupture', 'hors stock', 'masqué', 'cache']
+    .includes(brut) ? 'inactif' : 'actif';
+};
+
+// Import depuis un fichier CSV ou Excel déjà téléversé (req.file).
+exports.importProducts = async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
+      return res.status(400).json({ error: 'Aucun fichier fourni. Téléversez un fichier CSV ou Excel.' });
+    }
+
+    const extension = path.extname(req.file.originalname || '').toLowerCase();
+    let classeur;
+    try {
+      // Les classeurs Excel (.xls/.xlsx) sont binaires : pas de souci
+      // d'encodage. Les CSV, eux, sont souvent exportés en UTF-8 (Excel
+      // récent, LibreOffice, Google Sheets) ou en Windows-1252 (ancien
+      // Excel fr) : on détecte l'UTF-8 valide, sinon on part sur 1252.
+      const optionsLecture = { type: 'buffer' };
+      let contenu = req.file.buffer;
+      if (extension === '.csv') {
+        // Retire le BOM UTF-8 éventuel (sinon il pollue la première en-tête).
+        if (contenu.length >= 3 && contenu[0] === 0xEF && contenu[1] === 0xBB && contenu[2] === 0xBF) {
+          contenu = contenu.subarray(3);
+        }
+        optionsLecture.codepage = estUtf8(contenu) ? 65001 : 1252;
+      }
+      classeur = XLSX.read(contenu, optionsLecture);
+    } catch {
+      return res.status(400).json({ error: 'Fichier illisible. Fournissez un CSV ou un classeur Excel valide (.csv, .xls, .xlsx).' });
+    }
+
+    const nomFeuille = classeur.SheetNames[0];
+    if (!nomFeuille) {
+      return res.status(400).json({ error: 'Le fichier ne contient aucune feuille.' });
+    }
+
+    const lignes = XLSX.utils.sheet_to_json(classeur.Sheets[nomFeuille], { defval: '' });
+    if (lignes.length === 0) {
+      return res.status(400).json({ error: 'Aucune ligne de données trouvée (la première ligne doit contenir les en-têtes).' });
+    }
+    if (lignes.length > MAX_LIGNES_IMPORT) {
+      return res.status(400).json({ error: `Le fichier contient ${lignes.length} lignes ; la limite est de ${MAX_LIGNES_IMPORT} par import.` });
+    }
+
+    const userId = req.user ? req.user.id : null;
+    const resultat = { importes: 0, misesAJour: 0, erreurs: [] };
+
+    for (let i = 0; i < lignes.length; i++) {
+      const numeroLigne = i + 2; // la ligne 1 du fichier contient les en-têtes
+      const brut = lignes[i];
+
+      // Regroupe les cellules de la ligne selon les alias de colonnes.
+      const cellules = {};
+      for (const [colonne, valeur] of Object.entries(brut)) {
+        const champ = ALIAS_COLONNES[normaliserCle(colonne)];
+        if (champ && cellules[champ] === undefined) cellules[champ] = valeur;
+      }
+
+      const nom = String(cellules.nom ?? '').trim();
+      if (!nom) {
+        resultat.erreurs.push({ ligne: numeroLigne, erreur: 'Nom du produit manquant.' });
+        continue;
+      }
+
+      const prix = parseNombre(cellules.prix);
+      if (prix === null || prix < 0) {
+        resultat.erreurs.push({ ligne: numeroLigne, erreur: `Prix invalide ou manquant pour « ${nom} ».` });
+        continue;
+      }
+
+      let discount = parseNombre(cellules.discount) ?? 0;
+      discount = Math.trunc(discount);
+      if (discount < 0 || discount > 100) {
+        resultat.erreurs.push({ ligne: numeroLigne, erreur: `Remise invalide pour « ${nom} » (attendu : 0 à 100).` });
+        continue;
+      }
+
+      let stock = parseNombre(cellules.stock) ?? 0;
+      stock = Math.trunc(stock);
+      if (stock < 0) {
+        resultat.erreurs.push({ ligne: numeroLigne, erreur: `Stock invalide pour « ${nom} ».` });
+        continue;
+      }
+
+      const famille = String(cellules.categorie ?? '').trim();
+      const categorie = normaliserCategorie(famille, nom);
+      // La description du produit est celle de la colonne « description ».
+      // Si elle est vide et que la colonne « categorie » contient une famille
+      // détaillée (autre que les 3 catégories de boutique), on la reprend.
+      const description = String(cellules.description ?? '').trim()
+        || (CATEGORIES_BOUTIQUE.includes(famille) ? '' : famille);
+      const statut = parseStatut(cellules.statut);
+      let image = String(cellules.image ?? '').trim();
+      if (!image) image = '/prod.webp';
+      const code = normaliserCode(cellules.code);
+
+      // Un produit est identifié par sa référence : si elle existe déjà en
+      // base, on écrase tout et on ADDITIONNE les quantités en stock.
+      let existante = null;
+      if (code) {
+        const [lignes] = await db.query('SELECT id FROM produits WHERE code = ?', [code]);
+        existante = lignes[0];
+      }
+
+      if (existante) {
+        await db.query(
+          `UPDATE produits
+           SET nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?,
+               stock = stock + ?, statut = ?, image_produit = ?
+           WHERE id = ?`,
+          [nom, categorie, description, prix, discount, discount > 0 ? 1 : 0, stock, statut, image, existante.id]
+        );
+        resultat.misesAJour += 1;
+      } else {
+        await db.query(
+          `INSERT INTO produits (code, nom, categorie, description, prix, discount, en_solde, stock, statut, image_produit, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [code || null, nom, categorie, description, prix, discount, discount > 0 ? 1 : 0, stock, statut, image, userId]
+        );
+        resultat.importes += 1;
+      }
+    }
+
+    const traités = resultat.importes + resultat.misesAJour;
+    const message = traités > 0
+      ? `${resultat.importes} produit(s) importé(s), ${resultat.misesAJour} mis à jour (stock additionné).`
+      : 'Aucun produit n’a pu être importé.';
+
+    return res.status(traités > 0 ? 201 : 400).json({ message, ...resultat });
+  } catch (error) {
+    console.error("Erreur lors de l'import des produits :", error);
+    res.status(500).json({ error: 'Erreur serveur lors de l’import.' });
+  }
+};
+
+// Modèle CSV téléchargeable : reprend exactement les colonnes attendues.
+exports.modeleImport = (_req, res) => {
+  const entetes = ['code', 'nom', 'categorie', 'description', 'prix', 'discount', 'stock', 'statut', 'image'];
+  const exemple = [
+    'PRD-0001',
+    'Huile Moteur 5W30',
+    'Lubrifiants',
+    'Huile de synthèse 5W30, bidon 4L',
+    '45000',
+    '10',
+    '25',
+    'actif',
+    ''
+  ];
+  const csv = [entetes.join(';'), exemple.join(';')].join('\r\n') + '\r\n';
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="modele-import-produits.csv"');
+  res.send(csv);
+};
 
 // 1. Récupérer les produits (GET)
 // - Visiteur anonyme : uniquement les produits actifs (visibles en boutique)
@@ -18,8 +278,9 @@ exports.getAllProducts = async (req, res) => {
     
     const formattedProduits = produits.map(p => ({
       id: p.id,
+      code: p.code || `PRD-${String(p.id).padStart(4, '0')}`,
       nom: p.nom,
-      categorie: p.categorie || 'Lubrifiants',
+      categorie: normaliserCategorie(p.categorie, p.nom),
       description: p.description || '',
       prix: parseFloat(p.prix),
       discount: p.discount || 0,
@@ -49,8 +310,8 @@ exports.createProduct = async (req, res) => {
     const statut = (disponible === 'false' || disponible === false) ? 'inactif' : 'actif';
     const discountVal = parseInt(discount) || 0;
     const enSoldeVal = discountVal > 0 ? 1 : 0;
+    const catVal = normaliserCategorie(categorie, nom);
     const descVal = description || '';
-    const catVal = categorie || 'Lubrifiants';
     
     // Si un fichier a été uploadé via Multer, on crée le chemin, sinon image par défaut
     let imgVal = '/prod.webp';
@@ -88,8 +349,11 @@ exports.updateProduct = async (req, res) => {
     // Cas B : Modification complète via la Modale (Requête FormData)
     const { nom, categorie, prix, discount, stock, description } = body;
     
+    const catVal = normaliserCategorie(categorie, nom);
+    const descVal = description || '';
+
     let updateFields = 'nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?, stock = ?';
-    const params = [nom, categorie, description || '', parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
+    const params = [nom, catVal, descVal, parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
 
     // Si une nouvelle image a été envoyée, on l'ajoute à la mise à jour
     if (req.file) {

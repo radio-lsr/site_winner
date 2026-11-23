@@ -40,7 +40,7 @@
                           @mousedown.prevent="selectionnerProduit(p)"
                       >
                           <span class="suggestion-nom">{{ p.nom }}</span>
-                          <span class="suggestion-code">PRD-{{ String(p.id).padStart(4, '0') }}</span>
+                          <span class="suggestion-code">{{ p.code || 'PRD-' + String(p.id).padStart(4, '0') }}</span>
                       </li>
                   </ul>
               </li>
@@ -78,11 +78,20 @@ const menuBoutiqueOuvert = ref(false);
 const termeRecherche = ref('');
 const suggestionsOuvertes = ref(false);
 
+// Vide le champ de recherche et le filtre associé. Exposé au parent
+// (SitePublic) pour pouvoir être appelé dès qu'un produit est sélectionné.
+const reinitialiserRecherche = () => {
+    termeRecherche.value = '';
+    suggestionsOuvertes.value = false;
+    emit('search', '');
+};
+defineExpose({ reinitialiserRecherche });
+
 const suggestions = computed(() => {
     const q = termeRecherche.value.trim().toLowerCase();
     if (!q) return [];
     return (props.produits || []).filter(p => {
-        const code = `prd-${String(p.id).padStart(4, '0')}`;
+        const code = (p.code || `prd-${String(p.id).padStart(4, '0')}`).toLowerCase();
         return (p.nom || '').toLowerCase().includes(q) || code.includes(q);
     }).slice(0, 6);
 });
@@ -93,9 +102,7 @@ const onSearchInput = () => {
 };
 
 const selectionnerProduit = (produit) => {
-    suggestionsOuvertes.value = false;
-    termeRecherche.value = produit.nom;
-    emit('search', '');
+    reinitialiserRecherche();
     const el = document.getElementById('produits');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
     emit('select-product', produit);

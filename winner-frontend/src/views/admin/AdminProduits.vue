@@ -13,7 +13,10 @@
           <option value="Inactif">Inactif</option>
         </select>
       </div>
-      <button v-if="estAdmin" class="btn-yellow" @click="ouvrirModalAjout">➕ Nouveau Produit</button>
+      <div v-if="estAdmin" class="header-actions">
+        <button class="btn-import" @click="ouvrirModalImport">📥 Importer (Excel / CSV)</button>
+        <button class="btn-yellow" @click="ouvrirModalAjout">➕ Nouveau Produit</button>
+      </div>
       <span v-else class="lecture-seule">👁️ Mode lecture seule</span>
     </div>
     
@@ -34,17 +37,15 @@
           <div class="form-group">
             <label>Catégorie</label>
             <select v-model="formProduit.categorie" required :disabled="isLoading">
-              <option value="" disabled>Sélectionner une catégorie</option>
-              <option value="Lubrifiants">Lubrifiants</option>
-              <option value="Accessoires">Accessoires</option>
-              <option value="Pièces de rechange">Pièces de rechange</option>
+              <option v-for="cat in CATEGORIES_BOUTIQUE" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
 
           <!-- Champ Description -->
           <div class="form-group">
             <label>Description du produit</label>
-            <textarea v-model="formProduit.description" rows="3" placeholder="Brève description du produit..." :disabled="isLoading"></textarea>
+            <textarea v-model="formProduit.description" rows="3" placeholder="Famille du produit (ex. Huiles hydrauliques industrielles) ou description libre..." :disabled="isLoading"></textarea>
+            <small class="text-muted">La famille détaillée du tarif se saisit ici ; elle s'affiche sous le nom du produit.</small>
           </div>
 
           <!-- Champ Image -->
@@ -89,6 +90,65 @@
       </div>
     </div>
 
+    <!-- Fenêtre Modale d'import en masse (Excel / CSV) -->
+    <div v-if="afficherModalImport" class="modal-overlay" @click.self="fermerModalImport">
+      <div class="modal-content modal-import">
+        <div class="modal-header">
+          <h3>Importer des produits (Excel / CSV)</h3>
+          <button class="close-btn" @click="fermerModalImport" :disabled="importEnCours">✖</button>
+        </div>
+
+        <div class="import-help">
+          <p>Le fichier doit contenir une ligne d'en-têtes puis une ligne par produit. Colonnes reconnues :</p>
+          <code class="import-colonnes">code ; nom ; catégorie ; description ; prix ; remise ; stock ; statut ; image</code>
+          <p class="text-muted">
+            « nom » et « prix » sont obligatoires. La remise est un pourcentage (0 à 100).
+            Le statut accepte « actif » ou « inactif » (par défaut : actif). Maximum 500 lignes.
+          </p>
+          <p class="text-muted">
+            La <strong>référence</strong> (colonne <strong>« code »</strong>) identifie le produit : si elle existe
+            déjà en base, le produit est <strong>mis à jour</strong> (toutes les informations sont écrasées)
+            et les quantités de la colonne « stock » sont <strong>additionnées</strong> au stock existant.
+            Un produit ne peut donc être enregistré qu'une seule fois.
+          </p>
+          <p class="text-muted">
+            Catégories reconnues : <strong>Lubrifiants</strong>, <strong>Produits d'entretien</strong>, <strong>Accessoires</strong>.
+            Une autre valeur (par ex. « Huiles TP ») est rangée dans la description et le produit est reclassé automatiquement.
+          </p>
+          <p class="text-muted">
+            La <strong>description</strong> du produit est celle de la colonne <strong>« description »</strong>.
+            Si elle est vide, une famille détaillée saisie dans la colonne « categorie » est reprise à la place.
+          </p>
+          <button type="button" class="btn-link" @click="telechargerModele">⬇️ Télécharger le modèle CSV</button>
+        </div>
+
+        <div class="import-dropzone">
+          <input ref="inputFichier" type="file" accept=".csv,.xls,.xlsx" @change="choisirFichier" :disabled="importEnCours" />
+          <p v-if="fichierImport" class="import-fichier">📄 {{ fichierImport.name }} <span class="text-muted">({{ tailleFichierFormatee }})</span></p>
+          <p v-else class="text-muted">Aucun fichier sélectionné</p>
+        </div>
+
+        <!-- Résultat de l'import -->
+        <div v-if="importResultat" class="import-resultat">
+          <p v-if="(importResultat.importes + importResultat.misesAJour) > 0" class="import-ok">✅ {{ importResultat.message }}</p>
+          <p v-else class="import-ko">❌ {{ importResultat.message || "Aucun produit n'a pu être importé." }}</p>
+          <template v-if="importResultat.erreurs && importResultat.erreurs.length">
+            <p class="import-ko">⚠️ {{ importResultat.erreurs.length }} ligne(s) non importée(s) :</p>
+            <ul class="import-erreurs">
+              <li v-for="erreur in importResultat.erreurs" :key="erreur.ligne">Ligne {{ erreur.ligne }} : {{ erreur.erreur }}</li>
+            </ul>
+          </template>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" @click="fermerModalImport" :disabled="importEnCours">Fermer</button>
+          <button type="button" class="btn-yellow" @click="importerFichier" :disabled="!fichierImport || importEnCours">
+            {{ importEnCours ? 'Import en cours...' : 'Importer les produits' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Tableau des produits -->
     <table class="admin-table">
       <thead>
@@ -113,7 +173,7 @@
         <tr v-else v-for="produit in produitsFiltres" :key="produit.id">
           <!-- CORRECTION : Utilisation de formatImageUrl pour afficher la bonne URL -->
           <td><img :src="formatImageUrl(produit.image)" :alt="produit.nom" class="table-img" /></td>
-          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">PRD-{{ String(produit.id).padStart(4, '0') }}</span></td>
+          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">{{ produit.code || 'PRD-' + String(produit.id).padStart(4, '0') }}</span></td>
           <td>
             <strong>{{ produit.nom }}</strong>
             <div class="text-muted" style="font-size: 11px; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -175,6 +235,9 @@ import { notify, demanderConfirmation } from '@/services/dialog'
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`
 
+// Catégories de la boutique (alignées sur la migration de la table produits).
+const CATEGORIES_BOUTIQUE = ['Lubrifiants', "Produits d'entretien", 'Accessoires']
+
 const getAuthHeaders = () => ({ withCredentials: true })
 
 // Seul l'administrateur peut créer, modifier ou supprimer un produit ;
@@ -224,14 +287,16 @@ onMounted(() => {
 const filtreCategorie = ref('')
 const filtreStatut = ref('')
 
+// Catégories de la boutique : la liste est fixe (les familles détaillées du
+// tarif sont désormais conservées dans la description).
 const categoriesDisponibles = computed(() =>
-  [...new Set(produits.value.map(p => (p.categorie || '').trim()).filter(Boolean))].sort()
+  [...new Set([...CATEGORIES_BOUTIQUE, ...produits.value.map(p => (p.categorie || '').trim()).filter(Boolean)])].sort()
 )
 
 const produitsFiltres = computed(() => {
   const q = recherche.value.trim().toLowerCase()
   return produits.value.filter(p => {
-    const code = `prd-${String(p.id).padStart(4, '0')}`
+    const code = (p.code || `prd-${String(p.id).padStart(4, '0')}`).toLowerCase()
     const matchTexte = !q ||
       (p.nom || '').toLowerCase().includes(q) ||
       (p.categorie || '').toLowerCase().includes(q) ||
@@ -250,7 +315,7 @@ const handleFileUpload = (event) => {
 // --- ACTIONS MODALE ---
 const ouvrirModalAjout = () => {
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: '', description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
   afficherModal.value = true
 }
 
@@ -272,7 +337,86 @@ const ouvrirModalEdition = (produit) => {
 const fermerModal = () => {
   afficherModal.value = false
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: '', description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+}
+
+// --- IMPORT EN MASSE (EXCEL / CSV) ---
+const afficherModalImport = ref(false)
+const importEnCours = ref(false)
+const fichierImport = ref(null)
+const importResultat = ref(null)
+const inputFichier = ref(null)
+
+const tailleFichierFormatee = computed(() => {
+  const taille = fichierImport.value?.size || 0
+  if (taille < 1024) return `${taille} o`
+  if (taille < 1024 * 1024) return `${(taille / 1024).toFixed(1)} Ko`
+  return `${(taille / (1024 * 1024)).toFixed(1)} Mo`
+})
+
+const ouvrirModalImport = () => {
+  fichierImport.value = null
+  importResultat.value = null
+  importEnCours.value = false
+  afficherModalImport.value = true
+}
+
+const fermerModalImport = () => {
+  afficherModalImport.value = false
+  fichierImport.value = null
+  importResultat.value = null
+  importEnCours.value = false
+  if (inputFichier.value) inputFichier.value.value = ''
+}
+
+const choisirFichier = (event) => {
+  fichierImport.value = event.target.files[0] || null
+  importResultat.value = null
+}
+
+// Modèle CSV à télécharger depuis le backend (route authentifiée).
+const telechargerModele = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/modele-import`, { ...getAuthHeaders(), responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const lien = document.createElement('a')
+    lien.href = url
+    lien.download = 'modele-import-produits.csv'
+    document.body.appendChild(lien)
+    lien.click()
+    document.body.removeChild(lien)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Erreur lors du téléchargement du modèle :', error)
+    notify('Impossible de télécharger le modèle.')
+  }
+}
+
+const importerFichier = async () => {
+  if (!fichierImport.value) return
+
+  importEnCours.value = true
+  importResultat.value = null
+
+  const formData = new FormData()
+  formData.append('fichier', fichierImport.value)
+
+  try {
+    const response = await axios.post(`${API_URL}/import`, formData, getAuthHeaders())
+    importResultat.value = response.data
+    if ((response.data.importes + response.data.misesAJour) > 0) {
+      notify(response.data.message, 'success')
+      await fetchProduits()
+    } else {
+      notify(response.data.message || "Aucun produit n'a pu être importé.")
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'import :", error)
+    notify(error.response?.data?.error || "Une erreur est survenue lors de l'import.")
+    importResultat.value = null
+  } finally {
+    importEnCours.value = false
+  }
 }
 
 // --- SOUMISSION API ---
@@ -373,6 +517,25 @@ const formatImageUrl = (imagePath) => {
 .filter-select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; color: #334155; }
 .btn-yellow:hover { background-color: #e09612; }
 .btn-yellow:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.header-actions { display: flex; gap: 12px; align-items: center; }
+.btn-import { background: #1f1443; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.btn-import:hover { background: #241a4a; }
+.btn-import:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.modal-import { max-width: 620px; }
+.import-help { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #334155; display: flex; flex-direction: column; gap: 8px; }
+.import-help p { margin: 0; }
+.import-colonnes { background: #eef2ff; color: #3730a3; padding: 6px 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; white-space: nowrap; align-self: flex-start; }
+.btn-link { background: none; border: none; color: #2563eb; font-weight: 600; cursor: pointer; padding: 0; text-align: left; font-size: 13px; }
+.btn-link:hover { text-decoration: underline; }
+.import-dropzone { display: flex; flex-direction: column; gap: 8px; }
+.import-dropzone input[type="file"] { font-size: 13px; color: #334155; }
+.import-fichier { margin: 0; font-weight: 600; color: #1f1443; font-size: 14px; }
+.import-resultat { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.import-ok { color: #15803d; font-weight: 600; margin: 0; }
+.import-ko { color: #b91c1c; font-weight: 600; margin: 0; }
+.import-erreurs { margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
 
 .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
 .admin-table th, .admin-table td { padding: 18px 20px; text-align: left; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }

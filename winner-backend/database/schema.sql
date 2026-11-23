@@ -30,8 +30,14 @@ CREATE TABLE IF NOT EXISTS users (
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS produits (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  -- Référence du produit (ex. PRD-0012). Unique : un produit ne peut être
+  -- enregistré qu'une fois ; l'import écrase alors l'existant et additionne
+  -- les quantités en stock.
+  code VARCHAR(50) DEFAULT NULL,
   nom VARCHAR(200) NOT NULL,
   categorie VARCHAR(100) DEFAULT 'Lubrifiants',
+  -- Famille détaillée du tarif (ex. « Huiles hydrauliques industrielles ») :
+  -- la boutique ne filtre que sur Lubrifiants / Produits d'entretien / Accessoires.
   description TEXT,
   prix DECIMAL(10,2) NOT NULL DEFAULT 0,
   discount INT NOT NULL DEFAULT 0,
@@ -41,6 +47,7 @@ CREATE TABLE IF NOT EXISTS produits (
   image_produit VARCHAR(255) DEFAULT NULL,
   user_id INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_produits_code (code),
   CONSTRAINT fk_produits_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

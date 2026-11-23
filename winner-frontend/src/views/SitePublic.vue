@@ -2,6 +2,7 @@
   <div class="site-public">
     <!-- En-tête -->
     <Header
+        ref="headerRef"
         :cartItemCount="panier.length"
         :categories="categoriesBoutique"
         :produits="listeProduits"
@@ -47,14 +48,17 @@
     />
 
     <!-- Modale Panier -->
-    <CartModal 
-        v-if="afficherPanierModal" 
-      :panier="panier" 
+    <CartModal
+        v-if="afficherPanierModal"
+      :panier="panier"
       :commandeReussie="commandeReussie"
-      @close="afficherPanierModal = false" 
-      @remove-item="supprimerDuPanier" 
-      @submit-order="confirmerCommande" 
+      @close="afficherPanierModal = false"
+      @remove-item="supprimerDuPanier"
+      @submit-order="confirmerCommande"
     />
+
+    <!-- Popup promotionnelle au lancement : défilement des produits en promo -->
+    <PromoPopup :produits="listeProduits" @select-product="ouvrirDetailsProduit" />
   </div>
 </template>
 
@@ -75,19 +79,23 @@ import Footer from '../components/Footer.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
+import PromoPopup from '../components/PromoPopup.vue';
 
 const categorieBoutiqueActive = ref('Toutes');
 const rechercheBoutique = ref('');
+// Catégories de la boutique (fixes) : on les complète avec les catégories
+// effectivement présentes en base pour ne rien perdre.
+const CATEGORIES_BOUTIQUE = ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
 const categoriesBoutique = computed(() => {
   const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
-  return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
+  return [...new Set([...CATEGORIES_BOUTIQUE, ...cats])];
 });
 
 const listeProduits = ref([
-    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
-    { id: 2, nom: "Liquide de Refroidissement", prix: 15000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
+    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, prixOriginal: 55000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
+    { id: 2, nom: "Liquide de Refroidissement", prix: 15000, prixOriginal: 19000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
     { id: 3, nom: "Nettoyant Injecteur", prix: 12000, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
-    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
+    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55000, prixOriginal: 68000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
 ]);
 
 const listeGalerie = ref([
@@ -126,6 +134,7 @@ const listeArticles = ref([
 
 const panier = ref([]);
 const produitSelectionne = ref(null);
+const headerRef = ref(null);
 
 const articleSelectionne = ref(null);
 const afficherPanierModal = ref(false);
@@ -133,6 +142,9 @@ const commandeReussie = ref(false);
 
 const ouvrirDetailsProduit = (produit) => {
     produitSelectionne.value = produit;
+    // Dès qu'un produit est trouvé/ouvert, le champ de recherche redevient
+    // vide pour permettre immédiatement une nouvelle recherche.
+    headerRef.value?.reinitialiserRecherche();
 };
 
 const fermerDetailsProduit = () => {

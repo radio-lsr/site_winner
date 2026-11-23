@@ -12,7 +12,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Erreurs de validation d'upload (type, extension, taille ou signature réelle).
-  if (err.message && /Type de fichier non autorisé|contenu réel du fichier/i.test(err.message)) {
+  if (err.message && /Type de fichier non autorisé|contenu réel du fichier|fichiers CSV ou Excel/i.test(err.message)) {
     return res.status(400).json({ error: err.message });
   }
 
