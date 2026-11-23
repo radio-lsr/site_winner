@@ -183,11 +183,11 @@ exports.importProducts = async (req, res) => {
 
       const categorie = normaliserCategorie(cellules.categorie, nom);
       let description = String(cellules.description ?? '').trim();
-      // La famille du tarif peut n'être renseignée que dans la colonne
-      // catégorie (ex. « Huiles TP ») : elle devient alors la description.
+      // La description doit reprendre le contenu de la colonne « categorie » :
+      // si la colonne « description » est vide, on la remplit avec la colonne 2.
       if (!description) {
         const famille = String(cellules.categorie ?? '').trim();
-        if (famille && !CATEGORIES_BOUTIQUE.includes(famille)) description = famille;
+        if (famille) description = famille;
       }
       const statut = parseStatut(cellules.statut);
       let image = String(cellules.image ?? '').trim();
@@ -282,10 +282,9 @@ exports.createProduct = async (req, res) => {
     const discountVal = parseInt(discount) || 0;
     const enSoldeVal = discountVal > 0 ? 1 : 0;
     const catVal = normaliserCategorie(categorie, nom);
-    // Si la description est vide mais que la catégorie saisie est une famille
-    // du tarif (ex. « Huiles TP »), cette famille devient la description.
+    // La description doit reprendre la catégorie saisie quand elle est vide.
     const familleSaisie = String(categorie ?? '').trim();
-    const descVal = description || (!CATEGORIES_BOUTIQUE.includes(familleSaisie) ? familleSaisie : '');
+    const descVal = description || familleSaisie;
     
     // Si un fichier a été uploadé via Multer, on crée le chemin, sinon image par défaut
     let imgVal = '/prod.webp';
@@ -325,7 +324,7 @@ exports.updateProduct = async (req, res) => {
     
     const catVal = normaliserCategorie(categorie, nom);
     const familleSaisie = String(categorie ?? '').trim();
-    const descVal = description || (!CATEGORIES_BOUTIQUE.includes(familleSaisie) ? familleSaisie : '');
+    const descVal = description || familleSaisie;
 
     let updateFields = 'nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?, stock = ?';
     const params = [nom, catVal, descVal, parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
