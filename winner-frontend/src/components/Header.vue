@@ -78,6 +78,15 @@ const menuBoutiqueOuvert = ref(false);
 const termeRecherche = ref('');
 const suggestionsOuvertes = ref(false);
 
+// Vide le champ de recherche et le filtre associé. Exposé au parent
+// (SitePublic) pour pouvoir être appelé dès qu'un produit est sélectionné.
+const reinitialiserRecherche = () => {
+    termeRecherche.value = '';
+    suggestionsOuvertes.value = false;
+    emit('search', '');
+};
+defineExpose({ reinitialiserRecherche });
+
 const suggestions = computed(() => {
     const q = termeRecherche.value.trim().toLowerCase();
     if (!q) return [];
@@ -93,9 +102,7 @@ const onSearchInput = () => {
 };
 
 const selectionnerProduit = (produit) => {
-    suggestionsOuvertes.value = false;
-    termeRecherche.value = produit.nom;
-    emit('search', '');
+    reinitialiserRecherche();
     const el = document.getElementById('produits');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
     emit('select-product', produit);

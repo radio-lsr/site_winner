@@ -2,6 +2,7 @@
   <div class="site-public">
     <!-- En-tête -->
     <Header
+        ref="headerRef"
         :cartItemCount="panier.length"
         :categories="categoriesBoutique"
         :produits="listeProduits"
@@ -126,6 +127,7 @@ const listeArticles = ref([
 
 const panier = ref([]);
 const produitSelectionne = ref(null);
+const headerRef = ref(null);
 
 const articleSelectionne = ref(null);
 const afficherPanierModal = ref(false);
@@ -133,6 +135,9 @@ const commandeReussie = ref(false);
 
 const ouvrirDetailsProduit = (produit) => {
     produitSelectionne.value = produit;
+    // Dès qu'un produit est trouvé/ouvert, le champ de recherche redevient
+    // vide pour permettre immédiatement une nouvelle recherche.
+    headerRef.value?.reinitialiserRecherche();
 };
 
 const fermerDetailsProduit = () => {
