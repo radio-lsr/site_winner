@@ -235,6 +235,8 @@ const chargerProduits = async () => {
                 return {
                     id: p.id,
                     nom: p.nom,
+                    code: p.code || `PRD-${String(p.id).padStart(4, '0')}`,
+                    categorie: p.categorie || '',
                     prix,
                     // Conservé uniquement s'il y a une remise -> affichage barré
                     prixOriginal: discount > 0 ? prixOriginal : null,
