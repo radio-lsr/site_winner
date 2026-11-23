@@ -110,8 +110,8 @@
             Une autre valeur (par ex. « Huiles TP ») est rangée dans la description et le produit est reclassé automatiquement.
           </p>
           <p class="text-muted">
-            La <strong>description</strong> du produit est reprise de la colonne <strong>« categorie »</strong> (2ᵉ colonne).
-            La colonne « description » n'est utilisée que si la colonne « categorie » est vide.
+            La <strong>description</strong> du produit est celle de la colonne <strong>« description »</strong>.
+            Si elle est vide, une famille détaillée saisie dans la colonne « categorie » est reprise à la place.
           </p>
           <button type="button" class="btn-link" @click="telechargerModele">⬇️ Télécharger le modèle CSV</button>
         </div>

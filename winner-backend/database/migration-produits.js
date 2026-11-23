@@ -111,7 +111,12 @@ const migrer = async (db, listerColonnes) => {
 
       // 1. La famille détaillée devient la description, une seule fois et
       //    jamais par-dessus une description saisie par l'administrateur.
-      if (famille !== '' && (descriptionActuelle === '' || nEstQueCodeArticle(descriptionActuelle))) {
+      //    On ne fait rien si la catégorie est déjà une catégorie de boutique
+      //    (Lubrifiants / Produits d'entretien / Accessoires) : il n'y a pas de
+      //    famille à récupérer.
+      const familleEstUneCategorieBoutique = CATEGORIES_BOUTIQUE.includes(famille);
+      if (!familleEstUneCategorieBoutique && famille !== ''
+          && (descriptionActuelle === '' || nEstQueCodeArticle(descriptionActuelle))) {
         await db.query('UPDATE produits SET description = ? WHERE id = ?', [famille, produit.id]);
         transferees += 1;
       }
