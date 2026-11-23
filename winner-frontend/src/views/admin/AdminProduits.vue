@@ -37,17 +37,15 @@
           <div class="form-group">
             <label>Catégorie</label>
             <select v-model="formProduit.categorie" required :disabled="isLoading">
-              <option value="" disabled>Sélectionner une catégorie</option>
-              <option value="Lubrifiants">Lubrifiants</option>
-              <option value="Accessoires">Accessoires</option>
-              <option value="Pièces de rechange">Pièces de rechange</option>
+              <option v-for="cat in CATEGORIES_BOUTIQUE" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
 
           <!-- Champ Description -->
           <div class="form-group">
             <label>Description du produit</label>
-            <textarea v-model="formProduit.description" rows="3" placeholder="Brève description du produit..." :disabled="isLoading"></textarea>
+            <textarea v-model="formProduit.description" rows="3" placeholder="Famille du produit (ex. Huiles hydrauliques industrielles) ou description libre..." :disabled="isLoading"></textarea>
+            <small class="text-muted">La famille détaillée du tarif se saisit ici ; elle s'affiche sous le nom du produit.</small>
           </div>
 
           <!-- Champ Image -->
@@ -106,6 +104,10 @@
           <p class="text-muted">
             « nom » et « prix » sont obligatoires. La remise est un pourcentage (0 à 100).
             Le statut accepte « actif » ou « inactif » (par défaut : actif). Maximum 500 lignes.
+          </p>
+          <p class="text-muted">
+            Catégories reconnues : <strong>Lubrifiants</strong>, <strong>Produits d'entretien</strong>, <strong>Accessoires</strong>.
+            Une autre valeur (par ex. « Huiles TP ») est rangée dans la description et le produit est reclassé automatiquement.
           </p>
           <button type="button" class="btn-link" @click="telechargerModele">⬇️ Télécharger le modèle CSV</button>
         </div>
@@ -223,6 +225,9 @@ import { notify, demanderConfirmation } from '@/services/dialog'
 const BACKEND_URL = API_BASE_URL // Adresse du backend (centralisée)
 const API_URL = `${API_ROOT}/produits`
 
+// Catégories de la boutique (alignées sur la migration de la table produits).
+const CATEGORIES_BOUTIQUE = ['Lubrifiants', "Produits d'entretien", 'Accessoires']
+
 const getAuthHeaders = () => ({ withCredentials: true })
 
 // Seul l'administrateur peut créer, modifier ou supprimer un produit ;
@@ -272,8 +277,10 @@ onMounted(() => {
 const filtreCategorie = ref('')
 const filtreStatut = ref('')
 
+// Catégories de la boutique : la liste est fixe (les familles détaillées du
+// tarif sont désormais conservées dans la description).
 const categoriesDisponibles = computed(() =>
-  [...new Set(produits.value.map(p => (p.categorie || '').trim()).filter(Boolean))].sort()
+  [...new Set([...CATEGORIES_BOUTIQUE, ...produits.value.map(p => (p.categorie || '').trim()).filter(Boolean)])].sort()
 )
 
 const produitsFiltres = computed(() => {
@@ -298,7 +305,7 @@ const handleFileUpload = (event) => {
 // --- ACTIONS MODALE ---
 const ouvrirModalAjout = () => {
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: '', description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
   afficherModal.value = true
 }
 
@@ -320,7 +327,7 @@ const ouvrirModalEdition = (produit) => {
 const fermerModal = () => {
   afficherModal.value = false
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: '', description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
 }
 
 // --- IMPORT EN MASSE (EXCEL / CSV) ---

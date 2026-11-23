@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS produits (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nom TEXT NOT NULL,
   categorie TEXT DEFAULT 'Lubrifiants',
+  -- Famille détaillée du tarif (ex. « Huiles hydrauliques industrielles ») :
+  -- la boutique ne filtre que sur Lubrifiants / Produits d'entretien / Accessoires.
   description TEXT,
   prix REAL NOT NULL DEFAULT 0,
   discount INTEGER NOT NULL DEFAULT 0,

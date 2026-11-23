@@ -21,6 +21,7 @@ const heroRoutes = require('./routes/heroRoutes');
 const limits = require('./middleware/rateLimiters');
 const errorHandler = require('./middleware/errorMiddleware');
 const db = require('./config/db');
+const { appliquerMigrationProduits } = require('./database/migration-produits');
 
 const app = express();
 const crypto = require('crypto');
@@ -113,6 +114,11 @@ async function start() {
   }
   // Les anciens liens stockaient le token brut; les invalider lors de la migration.
   if (authVersionColumnAdded) await db.query('DELETE FROM password_resets');
+
+  // Migration produits : les familles détaillées du tarif rejoignent la
+  // description, et les catégories deviennent Lubrifiants / Produits
+  // d'entretien / Accessoires.
+  await appliquerMigrationProduits(db);
   const port = Number(process.env.PORT || 5000);
   app.listen(port, '0.0.0.0', () => console.log(`🚀 API WINNER démarrée sur le port ${port}`));
 }

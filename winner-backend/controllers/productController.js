@@ -3,6 +3,24 @@ const path = require('path');
 const XLSX = require('xlsx');
 
 // ------------------------------------------------------------------
+// Catégories de la boutique
+// ------------------------------------------------------------------
+// Les familles détaillées du tarif (« Huiles hydrauliques industrielles »,
+// « Huiles TP », « Graisses multi-usages »…) sont désormais conservées dans
+// `description` ; `categorie` ne sert plus qu'au filtre de la boutique.
+const { CATEGORIES_BOUTIQUE, CATEGORIE_DEFAUT, categorieDepuisFamille } = require('../database/migration-produits');
+
+// Ramène une valeur saisie (formulaire ou import) à une catégorie de boutique.
+// Les anciennes familles sont reclassées par leur contenu ; toute valeur
+// hors liste est repliée sur la catégorie par défaut.
+const normaliserCategorie = (valeur, nom) => {
+  const brut = String(valeur ?? '').trim();
+  if (!brut) return CATEGORIE_DEFAUT;
+  if (CATEGORIES_BOUTIQUE.includes(brut)) return brut;
+  return categorieDepuisFamille(brut, nom || '');
+};
+
+// ------------------------------------------------------------------
 // Import en masse de produits depuis un fichier CSV ou Excel.
 // ------------------------------------------------------------------
 
@@ -163,8 +181,14 @@ exports.importProducts = async (req, res) => {
         continue;
       }
 
-      const categorie = String(cellules.categorie ?? '').trim() || 'Lubrifiants';
-      const description = String(cellules.description ?? '').trim();
+      const categorie = normaliserCategorie(cellules.categorie, nom);
+      let description = String(cellules.description ?? '').trim();
+      // La famille du tarif peut n'être renseignée que dans la colonne
+      // catégorie (ex. « Huiles TP ») : elle devient alors la description.
+      if (!description) {
+        const famille = String(cellules.categorie ?? '').trim();
+        if (famille && !CATEGORIES_BOUTIQUE.includes(famille)) description = famille;
+      }
       const statut = parseStatut(cellules.statut);
       let image = String(cellules.image ?? '').trim();
       if (!image) image = '/prod.webp';
@@ -195,7 +219,7 @@ exports.modeleImport = (_req, res) => {
   const exemple = [
     'Huile Moteur 5W30',
     'Lubrifiants',
-    'Huile synthétique 5W30, bidon 4L',
+    'Huile de synthèse 5W30, bidon 4L',
     '45000',
     '10',
     '25',
@@ -227,7 +251,7 @@ exports.getAllProducts = async (req, res) => {
     const formattedProduits = produits.map(p => ({
       id: p.id,
       nom: p.nom,
-      categorie: p.categorie || 'Lubrifiants',
+      categorie: normaliserCategorie(p.categorie, p.nom),
       description: p.description || '',
       prix: parseFloat(p.prix),
       discount: p.discount || 0,
@@ -257,8 +281,11 @@ exports.createProduct = async (req, res) => {
     const statut = (disponible === 'false' || disponible === false) ? 'inactif' : 'actif';
     const discountVal = parseInt(discount) || 0;
     const enSoldeVal = discountVal > 0 ? 1 : 0;
-    const descVal = description || '';
-    const catVal = categorie || 'Lubrifiants';
+    const catVal = normaliserCategorie(categorie, nom);
+    // Si la description est vide mais que la catégorie saisie est une famille
+    // du tarif (ex. « Huiles TP »), cette famille devient la description.
+    const familleSaisie = String(categorie ?? '').trim();
+    const descVal = description || (!CATEGORIES_BOUTIQUE.includes(familleSaisie) ? familleSaisie : '');
     
     // Si un fichier a été uploadé via Multer, on crée le chemin, sinon image par défaut
     let imgVal = '/prod.webp';
@@ -296,8 +323,12 @@ exports.updateProduct = async (req, res) => {
     // Cas B : Modification complète via la Modale (Requête FormData)
     const { nom, categorie, prix, discount, stock, description } = body;
     
+    const catVal = normaliserCategorie(categorie, nom);
+    const familleSaisie = String(categorie ?? '').trim();
+    const descVal = description || (!CATEGORIES_BOUTIQUE.includes(familleSaisie) ? familleSaisie : '');
+
     let updateFields = 'nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?, stock = ?';
-    const params = [nom, categorie, description || '', parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
+    const params = [nom, catVal, descVal, parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
 
     // Si une nouvelle image a été envoyée, on l'ajoute à la mise à jour
     if (req.file) {

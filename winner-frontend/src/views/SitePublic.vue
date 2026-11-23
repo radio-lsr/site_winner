@@ -83,9 +83,12 @@ import PromoPopup from '../components/PromoPopup.vue';
 
 const categorieBoutiqueActive = ref('Toutes');
 const rechercheBoutique = ref('');
+// Catégories de la boutique (fixes) : on les complète avec les catégories
+// effectivement présentes en base pour ne rien perdre.
+const CATEGORIES_BOUTIQUE = ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
 const categoriesBoutique = computed(() => {
   const cats = [...new Set(listeProduits.value.map(p => (p.categorie || '').trim()).filter(Boolean))];
-  return cats.length ? cats : ['Lubrifiants', "Produits d'entretien", 'Accessoires'];
+  return [...new Set([...CATEGORIES_BOUTIQUE, ...cats])];
 });
 
 const listeProduits = ref([
