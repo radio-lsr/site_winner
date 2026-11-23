@@ -6,8 +6,8 @@
               — {{ categorieActive }}
           </span>
       </h2>
-      <div class="produits-container">
-          <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-card" @click="$emit('select-product', produit)">
+      <div v-if="produitsPagines.length > 0" class="produits-container">
+          <div v-for="produit in produitsPagines" :key="produit.id" class="produit-card" @click="$emit('select-product', produit)">
               <div v-if="enPromo(produit)" class="promo-bar">🔥 En promotion</div>
               <div class="produit-img-container">
                   <img :src="produit.image" :alt="produit.nom">
@@ -28,11 +28,27 @@
               <button class="btn-sm">Voir les détails</button>
           </div>
       </div>
+      <p v-else class="aucun-produit">Aucun produit trouvé.</p>
+
+      <!-- Pagination de la boutique -->
+      <div v-if="nbPages > 1" class="pagination">
+          <button type="button" class="page-btn nav" :disabled="pageCourante === 1" @click="allerA(pageCourante - 1)">‹ Précédent</button>
+          <button
+              v-for="(p, index) in pagesAffichage"
+              :key="index"
+              type="button"
+              :class="['page-btn', p.active && 'active', p.trait && 'trait']"
+              :disabled="p.trait"
+              @click="p.page && allerA(p.page)">
+              {{ p.label }}
+          </button>
+          <button type="button" class="page-btn nav" :disabled="pageCourante === nbPages" @click="allerA(pageCourante + 1)">Suivant ›</button>
+      </div>
   </section>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatPrix } from '../services/currency';
 
 const props = defineProps({
@@ -43,14 +59,72 @@ const props = defineProps({
     categorieActive: {
         type: String,
         default: 'Toutes'
+    },
+    // Recherche saisie dans l'en-tête (filtre la grille de la boutique)
+    recherche: {
+        type: String,
+        default: ''
     }
 });
+
 defineEmits(['select-product']);
 
+// Nombre de produits affichés par page.
+const PAR_PAGE = 12;
+const pageCourante = ref(1);
+
+// Filtre catégorie + recherche (nom ou code), comme dans l'en-tête.
 const produitsFiltres = computed(() => {
-    if (!props.categorieActive || props.categorieActive === 'Toutes') return props.listeProduits;
-    return props.listeProduits.filter(p => (p.categorie || '').toLowerCase() === props.categorieActive.toLowerCase());
+    const liste = Array.isArray(props.listeProduits) ? props.listeProduits : [];
+    const q = String(props.recherche || '').trim().toLowerCase();
+    return liste.filter(p => {
+        const okCategorie = !props.categorieActive || props.categorieActive === 'Toutes'
+            || String(p.categorie || '').toLowerCase() === String(props.categorieActive).toLowerCase();
+        if (!okCategorie) return false;
+        if (!q) return true;
+        const code = String(p.code || `PRD-${String(p.id).padStart(4, '0')}`).toLowerCase();
+        return String(p.nom || '').toLowerCase().includes(q) || code.includes(q);
+    });
 });
+
+const nbPages = computed(() => Math.max(1, Math.ceil(produitsFiltres.value.length / PAR_PAGE)));
+
+const debut = computed(() => (pageCourante.value - 1) * PAR_PAGE);
+const produitsPagines = computed(() => produitsFiltres.value.slice(debut.value, debut.value + PAR_PAGE));
+
+// Liste des pages à afficher, avec « … » quand il y en a beaucoup.
+const pagesAffichage = computed(() => {
+    const total = nbPages.value;
+    const courant = pageCourante.value;
+    const pages = [];
+    const ajouter = (n) => pages.push({ label: String(n), page: n, active: n === courant, trait: false });
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) ajouter(i);
+        return pages;
+    }
+    ajouter(1);
+    if (courant > 3) pages.push({ label: '…', page: null, active: false, trait: true });
+    const debutFenetre = Math.max(2, courant - 1);
+    const finFenetre = Math.min(total - 1, courant + 1);
+    for (let i = debutFenetre; i <= finFenetre; i++) ajouter(i);
+    if (courant < total - 2) pages.push({ label: '…', page: null, active: false, trait: true });
+    ajouter(total);
+    return pages;
+});
+
+const allerA = (page) => {
+    const cible = Math.min(Math.max(1, Number(page) || 1), nbPages.value);
+    if (cible === pageCourante.value) return;
+    pageCourante.value = cible;
+    // Replace le visiteur sur la grille lors du changement de page.
+    document.getElementById('produits')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+// Tout changement de filtre repart de la première page.
+watch(
+    [() => props.categorieActive, () => props.recherche, () => props.listeProduits],
+    () => { pageCourante.value = 1; }
+);
 
 // Un produit est en promotion s'il a un prix d'origine barré
 const enPromo = (produit) => Boolean(produit && produit.prixOriginal && produit.prixOriginal > produit.prix);
@@ -78,4 +152,31 @@ const enPromo = (produit) => Boolean(produit && produit.prixOriginal && produit.
 .btn-sm { background: #143489; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
 .btn-sm:hover { background: #E31E24; }
 .code-produit { display: inline-block; font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+
+/* --- Pagination --- */
+.aucun-produit { color: #6b7280; font-size: 18px; padding: 40px 0; }
+.pagination { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 45px; }
+.page-btn {
+    min-width: 42px;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #143489;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.page-btn:hover:not(:disabled):not(.active) { background: #eef2ff; border-color: #143489; }
+.page-btn.active { background: #143489; border-color: #143489; color: #ffffff; }
+.page-btn.nav { padding: 0 18px; }
+.page-btn.trait { border: none; background: transparent; cursor: default; color: #94a3b8; }
+.page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 768px) {
+    #produits { padding: 60px 20px; }
+    .section-title { font-size: 28px; margin-bottom: 30px; }
+    .page-btn { min-width: 38px; height: 38px; padding: 0 10px; }
+}
 </style>

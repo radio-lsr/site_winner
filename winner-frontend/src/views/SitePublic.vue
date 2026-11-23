@@ -32,6 +32,9 @@
     <!-- Pied de page -->
     <Footer />
 
+    <!-- Bouton flottant Facebook -->
+    <FacebookFloat />
+
     <!-- Modale Détails Produit -->
     <ProductModal 
       v-if="produitSelectionne" 
@@ -76,6 +79,7 @@ import Galerie from '../components/Galerie.vue';
 import Articles from '../components/Articles.vue';
 import About from '../components/About.vue';
 import Footer from '../components/Footer.vue';
+import FacebookFloat from '../components/FacebookFloat.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
@@ -92,10 +96,22 @@ const categoriesBoutique = computed(() => {
 });
 
 const listeProduits = ref([
-    { id: 1, nom: "Huile Moteur Quartz 9000", prix: 45000, prixOriginal: 55000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
-    { id: 2, nom: "Liquide de Refroidissement", prix: 15000, prixOriginal: 19000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
-    { id: 3, nom: "Nettoyant Injecteur", prix: 12000, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
-    { id: 4, nom: "Bidon d'Huile 4x4", prix: 55000, prixOriginal: 68000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." }
+    { id: 1, nom: "Huile Moteur Quartz 9000", categorie: "Lubrifiants", prix: 45000, prixOriginal: 55000, image: "/prod.webp", specs: "Huile de synthèse 5W-40. Assure une protection optimale du moteur contre l'usure et l'encrassement. Idéal pour véhicules légers." },
+    { id: 2, nom: "Liquide de Refroidissement", categorie: "Produits d'entretien", prix: 15000, prixOriginal: 19000, image: "/prod1.webp", specs: "Protège le moteur contre la surchauffe l'été et le gel l'hiver. Formule anti-corrosion de haute qualité." },
+    { id: 3, nom: "Nettoyant Injecteur", categorie: "Produits d'entretien", prix: 12000, image: "/telecharger.webp", specs: "Additif pour carburant. Nettoie le système d'injection, réduit la consommation et les émissions polluantes." },
+    { id: 4, nom: "Bidon d'Huile 4x4", categorie: "Lubrifiants", prix: 55000, prixOriginal: 68000, image: "/OIP2.webp", specs: "Formule spéciale pour les moteurs soumis à de fortes charges. Viscosité adaptée aux climats chauds." },
+    { id: 5, nom: "Huile de Vidange Quartz 7000", categorie: "Lubrifiants", prix: 38000, image: "/prod.webp", specs: "Huile semi-synthétique 10W-40. Bonne protection au quotidien pour moteurs essence et diesel." },
+    { id: 6, nom: "Huile de Transmission", categorie: "Lubrifiants", prix: 27000, image: "/prod1.webp", specs: "Lubrifiant pour boîtes de vitesses manuelles et ponts. Améliore la souplesse du passage des rapports." },
+    { id: 7, nom: "Graisse Multi-Usages", categorie: "Lubrifiants", prix: 9500, image: "/telecharger.webp", specs: "Graisse lithium résistante à l'eau et à la chaleur, pour roulements, articulations et pièces en mouvement." },
+    { id: 8, nom: "Huile Hydraulique Industrielle", categorie: "Lubrifiants", prix: 42000, image: "/OIP2.webp", specs: "Huile hydraulique anti-usure pour engins TP, presses et équipements industriels." },
+    { id: 9, nom: "Dégraissant Moteur", categorie: "Produits d'entretien", prix: 11000, image: "/telecharger.webp", specs: "Nettoie et dégraisse le bloc moteur et les ateliers. Mousse active, rinçage à l'eau." },
+    { id: 10, nom: "Nettoyant Carrosserie", categorie: "Produits d'entretien", prix: 8000, image: "/prod1.webp", specs: "Shampoing voiture pH neutre. Nettoie sans traces et fait briller la carrosserie." },
+    { id: 11, nom: "Lave-Glace Concentré", categorie: "Produits d'entretien", prix: 5500, image: "/prod.webp", specs: "Lave-glace concentré été/hiver. Nettoie le pare-brise sans laisser de film." },
+    { id: 12, nom: "Filtre à Huile", categorie: "Accessoires", prix: 7500, image: "/OIP2.webp", specs: "Filtre à huile de qualité d'origine. Retient les particules et protège le moteur." },
+    { id: 13, nom: "Filtre à Air", categorie: "Accessoires", prix: 9000, image: "/prod1.webp", specs: "Filtre à air haute filtration pour une meilleure respiration du moteur." },
+    { id: 14, nom: "Essuie-Glace (paire)", categorie: "Accessoires", prix: 4500, image: "/telecharger.webp", specs: "Paire de balais d'essuie-glace souples, silencieux et efficaces sous forte pluie." },
+    { id: 15, nom: "Bouchon de Radiateur", categorie: "Accessoires", prix: 6000, image: "/OIP2.webp", specs: "Bouchon de radiateur étanche, adaptable sur la plupart des véhicules." },
+    { id: 16, nom: "Additif Réservoir Diesel", categorie: "Produits d'entretien", prix: 13500, image: "/prod.webp", specs: "Additif diesel anti-dépôt et anti-corrosion pour réservoir et injecteurs." }
 ]);
 
 const listeGalerie = ref([
@@ -231,6 +247,8 @@ const chargerProduits = async () => {
                 return {
                     id: p.id,
                     nom: p.nom,
+                    code: p.code || `PRD-${String(p.id).padStart(4, '0')}`,
+                    categorie: p.categorie || '',
                     prix,
                     // Conservé uniquement s'il y a une remise -> affichage barré
                     prixOriginal: discount > 0 ? prixOriginal : null,

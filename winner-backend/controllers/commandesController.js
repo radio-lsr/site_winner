@@ -55,7 +55,9 @@ exports.createOrder = async (req, res) => {
     for (const [id, quantity] of requested) {
       const product = productById.get(id);
       if (!product || String(product.statut).toLowerCase() !== 'actif') return res.status(400).json({ error: 'Un produit de la commande est indisponible.' });
-      if (Number(product.stock) < quantity) return res.status(409).json({ error: `Stock insuffisant pour « ${product.nom} ».` });
+      // Les commandes passent même si le stock est à 0 ou en rupture :
+      // aucun blocage sur la quantité, le stock disponible sera simplement
+      // décrémenté (plafonné à 0) après la commande.
       const base = Number(product.prix);
       const discount = product.en_solde ? Math.min(100, Math.max(0, Number(product.discount) || 0)) : 0;
       if (!Number.isFinite(base) || base < 0) return res.status(409).json({ error: 'Prix produit invalide en base.' });
