@@ -100,10 +100,16 @@
 
         <div class="import-help">
           <p>Le fichier doit contenir une ligne d'en-têtes puis une ligne par produit. Colonnes reconnues :</p>
-          <code class="import-colonnes">nom ; catégorie ; description ; prix ; remise ; stock ; statut ; image</code>
+          <code class="import-colonnes">code ; nom ; catégorie ; description ; prix ; remise ; stock ; statut ; image</code>
           <p class="text-muted">
             « nom » et « prix » sont obligatoires. La remise est un pourcentage (0 à 100).
             Le statut accepte « actif » ou « inactif » (par défaut : actif). Maximum 500 lignes.
+          </p>
+          <p class="text-muted">
+            La <strong>référence</strong> (colonne <strong>« code »</strong>) identifie le produit : si elle existe
+            déjà en base, le produit est <strong>mis à jour</strong> (toutes les informations sont écrasées)
+            et les quantités de la colonne « stock » sont <strong>additionnées</strong> au stock existant.
+            Un produit ne peut donc être enregistré qu'une seule fois.
           </p>
           <p class="text-muted">
             Catégories reconnues : <strong>Lubrifiants</strong>, <strong>Produits d'entretien</strong>, <strong>Accessoires</strong>.
@@ -124,7 +130,7 @@
 
         <!-- Résultat de l'import -->
         <div v-if="importResultat" class="import-resultat">
-          <p v-if="importResultat.importes > 0" class="import-ok">✅ {{ importResultat.message }}</p>
+          <p v-if="(importResultat.importes + importResultat.misesAJour) > 0" class="import-ok">✅ {{ importResultat.message }}</p>
           <p v-else class="import-ko">❌ {{ importResultat.message || "Aucun produit n'a pu être importé." }}</p>
           <template v-if="importResultat.erreurs && importResultat.erreurs.length">
             <p class="import-ko">⚠️ {{ importResultat.erreurs.length }} ligne(s) non importée(s) :</p>
@@ -167,7 +173,7 @@
         <tr v-else v-for="produit in produitsFiltres" :key="produit.id">
           <!-- CORRECTION : Utilisation de formatImageUrl pour afficher la bonne URL -->
           <td><img :src="formatImageUrl(produit.image)" :alt="produit.nom" class="table-img" /></td>
-          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">PRD-{{ String(produit.id).padStart(4, '0') }}</span></td>
+          <td><span style="font-family: monospace; font-weight: 700; color: #1e3a8a; background: #eff6ff; padding: 4px 8px; border-radius: 6px; font-size: 12px;">{{ produit.code || 'PRD-' + String(produit.id).padStart(4, '0') }}</span></td>
           <td>
             <strong>{{ produit.nom }}</strong>
             <div class="text-muted" style="font-size: 11px; margin-top: 4px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -290,7 +296,7 @@ const categoriesDisponibles = computed(() =>
 const produitsFiltres = computed(() => {
   const q = recherche.value.trim().toLowerCase()
   return produits.value.filter(p => {
-    const code = `prd-${String(p.id).padStart(4, '0')}`
+    const code = (p.code || `prd-${String(p.id).padStart(4, '0')}`).toLowerCase()
     const matchTexte = !q ||
       (p.nom || '').toLowerCase().includes(q) ||
       (p.categorie || '').toLowerCase().includes(q) ||
@@ -398,7 +404,7 @@ const importerFichier = async () => {
   try {
     const response = await axios.post(`${API_URL}/import`, formData, getAuthHeaders())
     importResultat.value = response.data
-    if (response.data.importes > 0) {
+    if ((response.data.importes + response.data.misesAJour) > 0) {
       notify(response.data.message, 'success')
       await fetchProduits()
     } else {

@@ -18,6 +18,9 @@
  * Elle fonctionne sur les deux moteurs supportés (MySQL par défaut,
  * SQLite avec DB_ENGINE=sqlite) et est jouée automatiquement au démarrage
  * de l'API ; `npm run db:init` l'exécute aussi.
+ *
+ * Le même point d'entrée ajoute aussi les colonnes manquantes de `commandes`
+ * (`client_email`, `mode_retrait`) — voir appliquerMigrationCommandes.
  */
 
 // Familles du tarif dont les produits sont des lubrifiants.
@@ -148,8 +151,68 @@ const migrer = async (db, listerColonnes) => {
   return { transferees, reclassifies, categories: CATEGORIES_BOUTIQUE };
 };
 
+/**
+ * Crée la colonne `code` (référence unique) si elle manque, puis donne à
+ * chaque produit existant la référence PRD-0001, PRD-0002… dérivée de son id.
+ */
+const appliquerMigrationCode = async (db) => {
+  const estMysql = typeof db.getConnection === 'function';
+  const [colonnes] = await db.query(estMysql ? 'SHOW COLUMNS FROM produits' : 'PRAGMA table_info(produits)');
+  const noms = new Set(colonnes.map(c => c.Field || c.name));
+
+  if (!noms.has('code')) {
+    await db.query(estMysql
+      ? 'ALTER TABLE produits ADD COLUMN code VARCHAR(50) DEFAULT NULL'
+      : 'ALTER TABLE produits ADD COLUMN code TEXT DEFAULT NULL');
+  }
+
+  await db.query(estMysql
+    ? "UPDATE produits SET code = CONCAT('PRD-', LPAD(id, 4, '0')) WHERE code IS NULL OR code = ''"
+    : "UPDATE produits SET code = 'PRD-' || printf('%04d', id) WHERE code IS NULL OR code = ''");
+
+  try {
+    await db.query(estMysql
+      ? 'ALTER TABLE produits ADD UNIQUE INDEX idx_produits_code (code)'
+      : 'CREATE UNIQUE INDEX IF NOT EXISTS idx_produits_code ON produits(code)');
+  } catch (error) {
+    // Index déjà présent (ou valeurs dupliquées) : l'import gère quand même
+    // la doublon en écrasant le produit existant.
+  }
+};
+
+/**
+ * Ajoute à `commandes` les colonnes `client_email` et `mode_retrait` lorsque la
+ * base ne les possède pas encore (schéma SQLite historique incomplet par
+ * rapport à schema.sql / au controller).
+ */
+const appliquerMigrationCommandes = async (db) => {
+  const estMysql = typeof db.getConnection === 'function';
+  const [colonnes] = await db.query(estMysql ? 'SHOW COLUMNS FROM commandes' : 'PRAGMA table_info(commandes)');
+  const noms = new Set(colonnes.map(c => c.Field || c.name));
+
+  if (noms.has('client_email') && noms.has('mode_retrait')) return false;
+
+  const ajouts = [];
+  if (!noms.has('client_email')) {
+    ajouts.push(estMysql
+      ? 'ALTER TABLE commandes ADD COLUMN client_email VARCHAR(150) DEFAULT NULL'
+      : 'ALTER TABLE commandes ADD COLUMN client_email TEXT DEFAULT NULL');
+  }
+  if (!noms.has('mode_retrait')) {
+    ajouts.push(estMysql
+      ? "ALTER TABLE commandes ADD COLUMN mode_retrait ENUM('Livraison', 'Réservation') NOT NULL DEFAULT 'Livraison'"
+      : "ALTER TABLE commandes ADD COLUMN mode_retrait TEXT NOT NULL DEFAULT 'Livraison'");
+  }
+  for (const sql of ajouts) {
+    await db.query(sql);
+  }
+  return true;
+};
+
 const appliquerMigrationProduits = async (db) => {
   try {
+    await appliquerMigrationCode(db);
+    await appliquerMigrationCommandes(db);
     const engine = (process.env.DB_ENGINE || '').toLowerCase();
     const resultat = engine === 'sqlite'
       ? await migrer(db, async () => (await db.query('PRAGMA table_info(produits)'))[0])
@@ -169,6 +232,8 @@ const appliquerMigrationProduits = async (db) => {
 
 module.exports = {
   appliquerMigrationProduits,
+  appliquerMigrationCode,
+  appliquerMigrationCommandes,
   categorieDepuisFamille,
   CATEGORIES_BOUTIQUE,
   CATEGORIE_DEFAUT

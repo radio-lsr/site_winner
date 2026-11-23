@@ -40,7 +40,7 @@
                           @mousedown.prevent="selectionnerProduit(p)"
                       >
                           <span class="suggestion-nom">{{ p.nom }}</span>
-                          <span class="suggestion-code">PRD-{{ String(p.id).padStart(4, '0') }}</span>
+                          <span class="suggestion-code">{{ p.code || 'PRD-' + String(p.id).padStart(4, '0') }}</span>
                       </li>
                   </ul>
               </li>
@@ -91,7 +91,7 @@ const suggestions = computed(() => {
     const q = termeRecherche.value.trim().toLowerCase();
     if (!q) return [];
     return (props.produits || []).filter(p => {
-        const code = `prd-${String(p.id).padStart(4, '0')}`;
+        const code = (p.code || `prd-${String(p.id).padStart(4, '0')}`).toLowerCase();
         return (p.nom || '').toLowerCase().includes(q) || code.includes(q);
     }).slice(0, 6);
 });

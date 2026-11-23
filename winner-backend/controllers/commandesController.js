@@ -48,7 +48,7 @@ exports.createOrder = async (req, res) => {
     }
     const ids = [...requested.keys()];
     const placeholders = ids.map(() => '?').join(',');
-    const [products] = await db.query(`SELECT id, nom, prix, discount, en_solde, stock, statut FROM produits WHERE id IN (${placeholders})`, ids);
+    const [products] = await db.query(`SELECT id, nom, code, prix, discount, en_solde, stock, statut FROM produits WHERE id IN (${placeholders})`, ids);
     const productById = new Map(products.map(product => [Number(product.id), product]));
     const safeLines = [];
     let total = 0;
@@ -61,7 +61,7 @@ exports.createOrder = async (req, res) => {
       if (!Number.isFinite(base) || base < 0) return res.status(409).json({ error: 'Prix produit invalide en base.' });
       const unitPrice = Math.round(base * (1 - discount / 100) * 100) / 100;
       total += unitPrice * quantity;
-      const codeProduit = `PRD-${String(id).padStart(4, '0')}`;
+      const codeProduit = product.code || `PRD-${String(id).padStart(4, '0')}`;
       safeLines.push({ id, codeProduit, nom: String(product.nom), prix: unitPrice, quantite: quantity });
     }
     total = Math.round(total * 100) / 100;
@@ -74,6 +74,15 @@ exports.createOrder = async (req, res) => {
     );
     const ref = genererReference(mode);
     await db.query('UPDATE commandes SET ref = ? WHERE id = ?', [ref, result.insertId]);
+
+    // La commande consomme le stock : on décrémente chaque produit.
+    const estMysql = typeof db.getConnection === 'function';
+    const sqlDecrement = estMysql
+      ? 'UPDATE produits SET stock = GREATEST(0, stock - ?) WHERE id = ?'
+      : 'UPDATE produits SET stock = MAX(0, stock - ?) WHERE id = ?';
+    for (const ligne of safeLines) {
+      await db.query(sqlDecrement, [ligne.quantite, ligne.id]);
+    }
 
     // Envoi du code commande / réservation par email si SMTP est configuré
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {

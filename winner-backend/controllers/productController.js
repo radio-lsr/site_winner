@@ -20,6 +20,9 @@ const normaliserCategorie = (valeur, nom) => {
   return categorieDepuisFamille(brut, nom || '');
 };
 
+// Normalise une référence produit : « prd-0012 » -> « PRD-0012 ».
+const normaliserCode = (valeur) => String(valeur ?? '').trim().toUpperCase();
+
 // ------------------------------------------------------------------
 // Import en masse de produits depuis un fichier CSV ou Excel.
 // ------------------------------------------------------------------
@@ -30,6 +33,11 @@ const MAX_LIGNES_IMPORT = 500;
 // Correspondance des en-têtes (normalisés : minuscules, sans accents,
 // sans espaces/tirets) vers les champs attendus.
 const ALIAS_COLONNES = {
+  code: 'code',
+  codeproduit: 'code',
+  reference: 'code',
+  ref: 'code',
+  sku: 'code',
   nom: 'nom',
   name: 'nom',
   produit: 'nom',
@@ -142,7 +150,7 @@ exports.importProducts = async (req, res) => {
     }
 
     const userId = req.user ? req.user.id : null;
-    const resultat = { importes: 0, erreurs: [] };
+    const resultat = { importes: 0, misesAJour: 0, erreurs: [] };
 
     for (let i = 0; i < lignes.length; i++) {
       const numeroLigne = i + 2; // la ligne 1 du fichier contient les en-têtes
@@ -191,21 +199,41 @@ exports.importProducts = async (req, res) => {
       const statut = parseStatut(cellules.statut);
       let image = String(cellules.image ?? '').trim();
       if (!image) image = '/prod.webp';
+      const code = normaliserCode(cellules.code);
 
-      await db.query(
-        `INSERT INTO produits (nom, categorie, description, prix, discount, en_solde, stock, statut, image_produit, user_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [nom, categorie, description, prix, discount, discount > 0 ? 1 : 0, stock, statut, image, userId]
-      );
-      resultat.importes += 1;
+      // Un produit est identifié par sa référence : si elle existe déjà en
+      // base, on écrase tout et on ADDITIONNE les quantités en stock.
+      let existante = null;
+      if (code) {
+        const [lignes] = await db.query('SELECT id FROM produits WHERE code = ?', [code]);
+        existante = lignes[0];
+      }
+
+      if (existante) {
+        await db.query(
+          `UPDATE produits
+           SET nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?,
+               stock = stock + ?, statut = ?, image_produit = ?
+           WHERE id = ?`,
+          [nom, categorie, description, prix, discount, discount > 0 ? 1 : 0, stock, statut, image, existante.id]
+        );
+        resultat.misesAJour += 1;
+      } else {
+        await db.query(
+          `INSERT INTO produits (code, nom, categorie, description, prix, discount, en_solde, stock, statut, image_produit, user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [code || null, nom, categorie, description, prix, discount, discount > 0 ? 1 : 0, stock, statut, image, userId]
+        );
+        resultat.importes += 1;
+      }
     }
 
-    return res.status(resultat.importes > 0 ? 201 : 400).json({
-      message: resultat.importes > 0
-        ? `${resultat.importes} produit(s) importé(s) avec succès.`
-        : 'Aucun produit n’a pu être importé.',
-      ...resultat
-    });
+    const traités = resultat.importes + resultat.misesAJour;
+    const message = traités > 0
+      ? `${resultat.importes} produit(s) importé(s), ${resultat.misesAJour} mis à jour (stock additionné).`
+      : 'Aucun produit n’a pu être importé.';
+
+    return res.status(traités > 0 ? 201 : 400).json({ message, ...resultat });
   } catch (error) {
     console.error("Erreur lors de l'import des produits :", error);
     res.status(500).json({ error: 'Erreur serveur lors de l’import.' });
@@ -214,8 +242,9 @@ exports.importProducts = async (req, res) => {
 
 // Modèle CSV téléchargeable : reprend exactement les colonnes attendues.
 exports.modeleImport = (_req, res) => {
-  const entetes = ['nom', 'categorie', 'description', 'prix', 'discount', 'stock', 'statut', 'image'];
+  const entetes = ['code', 'nom', 'categorie', 'description', 'prix', 'discount', 'stock', 'statut', 'image'];
   const exemple = [
+    'PRD-0001',
     'Huile Moteur 5W30',
     'Lubrifiants',
     'Huile de synthèse 5W30, bidon 4L',
@@ -249,6 +278,7 @@ exports.getAllProducts = async (req, res) => {
     
     const formattedProduits = produits.map(p => ({
       id: p.id,
+      code: p.code || `PRD-${String(p.id).padStart(4, '0')}`,
       nom: p.nom,
       categorie: normaliserCategorie(p.categorie, p.nom),
       description: p.description || '',
