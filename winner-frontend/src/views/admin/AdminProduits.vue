@@ -108,7 +108,10 @@
           <p class="text-muted">
             Catégories reconnues : <strong>Lubrifiants</strong>, <strong>Produits d'entretien</strong>, <strong>Accessoires</strong>.
             Une autre valeur (par ex. « Huiles TP ») est rangée dans la description et le produit est reclassé automatiquement.
-            Si la colonne « description » est vide, elle reprend le contenu de la colonne « categorie ».
+          </p>
+          <p class="text-muted">
+            La <strong>description</strong> du produit est reprise de la colonne <strong>« categorie »</strong> (2ᵉ colonne).
+            La colonne « description » n'est utilisée que si la colonne « categorie » est vide.
           </p>
           <button type="button" class="btn-link" @click="telechargerModele">⬇️ Télécharger le modèle CSV</button>
         </div>

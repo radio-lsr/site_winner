@@ -181,14 +181,12 @@ exports.importProducts = async (req, res) => {
         continue;
       }
 
-      const categorie = normaliserCategorie(cellules.categorie, nom);
-      let description = String(cellules.description ?? '').trim();
-      // La description doit reprendre le contenu de la colonne « categorie » :
-      // si la colonne « description » est vide, on la remplit avec la colonne 2.
-      if (!description) {
-        const famille = String(cellules.categorie ?? '').trim();
-        if (famille) description = famille;
-      }
+      // La description du produit est le contenu de la colonne « categorie »
+      // (2e colonne du fichier) : c'est la famille détaillée du tarif. La
+      // colonne « description » ne sert que de repli si la 2e est vide.
+      const famille = String(cellules.categorie ?? '').trim();
+      const categorie = normaliserCategorie(famille, nom);
+      const description = famille || String(cellules.description ?? '').trim();
       const statut = parseStatut(cellules.statut);
       let image = String(cellules.image ?? '').trim();
       if (!image) image = '/prod.webp';
