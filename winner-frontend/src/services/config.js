@@ -22,6 +22,9 @@ export const API_BASE_URL = (envValue !== undefined && envValue !== null)
 // Racine complète des endpoints : http://localhost:5000/api
 export const API_URL = `${API_BASE_URL}/api`;
 
+// Page Facebook officielle de WINNER Multiservice (pied de page + bouton flottant)
+export const FACEBOOK_URL = 'https://www.facebook.com/etswinnermultiservice';
+
 /**
  * Construit l'URL absolue d'un fichier uploadé renvoyé par le backend.
  * Le backend renvoie des chemins relatifs comme "/uploads/xxx.png".

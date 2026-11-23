@@ -32,6 +32,9 @@
     <!-- Pied de page -->
     <Footer />
 
+    <!-- Bouton flottant Facebook -->
+    <FacebookFloat />
+
     <!-- Modale Détails Produit -->
     <ProductModal 
       v-if="produitSelectionne" 
@@ -76,6 +79,7 @@ import Galerie from '../components/Galerie.vue';
 import Articles from '../components/Articles.vue';
 import About from '../components/About.vue';
 import Footer from '../components/Footer.vue';
+import FacebookFloat from '../components/FacebookFloat.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
