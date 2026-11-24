@@ -1,8 +1,8 @@
 <template>
   <header>
       <a href="#accueil" class="logo">
-          <img src="/Logo-Winner.png" alt="Logo Winner Multiservice" onerror="this.style.display='none'">
-          <h1>WINNER <span>Multiservice</span></h1>
+          <img src="/Logo-Winner.png" alt="Logo Ets Winner Multiservice" onerror="this.style.display='none'">
+          <h1>Ets Winner <span>Multiservice</span></h1>
       </a>
       <nav>
           <ul>
@@ -40,7 +40,6 @@
                           @mousedown.prevent="selectionnerProduit(p)"
                       >
                           <span class="suggestion-nom">{{ p.nom }}</span>
-                          <span class="suggestion-code">{{ p.code || 'PRD-' + String(p.id).padStart(4, '0') }}</span>
                       </li>
                   </ul>
               </li>
@@ -202,5 +201,4 @@ nav ul li a:hover { color: #E31E24; }
     color: #1e293b;
 }
 .suggestion-item:hover { background: #f1f5f9; color: #1e3a8a; }
-.suggestion-code { font-size: 11px; color: #64748b; font-weight: 600; }
 </style>

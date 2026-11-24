@@ -17,6 +17,7 @@ import AdminAvis from '@/views/admin/AdminAvis.vue';
 import AdminHero from '@/views/admin/AdminHero.vue';
 import AdminLogs from '@/views/admin/AdminLogs.vue';
 import ProfilUtilisateur from '../views/admin/ProfilUtilisateur.vue';
+import RedirectionExterne from '../views/RedirectionExterne.vue';
 
 const routes = [
   {
@@ -28,6 +29,13 @@ const routes = [
   {
     path: '/login',
     redirect: '/admin/login'
+  },
+  // Adresse courte et « propre » (sans identifiant numérique) vers Facebook.
+  {
+    path: '/facebook',
+    name: 'FacebookRedirect',
+    component: RedirectionExterne,
+    meta: { title: 'Facebook' }
   },
   {
     path: '/admin/login',

@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS produits (
   prix REAL NOT NULL DEFAULT 0,
   discount INTEGER NOT NULL DEFAULT 0,
   en_solde INTEGER NOT NULL DEFAULT 0,
+  -- Produit choisi par l'administrateur pour être mis en avant (popup de
+  -- lancement puis réapparition après 10 minutes d'inactivité du visiteur).
+  vedette INTEGER NOT NULL DEFAULT 0,
   stock INTEGER NOT NULL DEFAULT 0,
   statut TEXT NOT NULL DEFAULT 'actif' CHECK (statut IN ('actif', 'inactif')),
   image_produit TEXT DEFAULT NULL,

@@ -61,6 +61,11 @@
               <input type="checkbox" v-model="formProduit.enSolde" :disabled="isLoading" />
               Ce produit est en promotion
             </label>
+
+            <label>
+              <input type="checkbox" v-model="formProduit.vedette" :disabled="isLoading" />
+              Mettre ce produit en avant (popup du site)
+            </label>
           </div>
 
           <div class="form-row">
@@ -161,12 +166,13 @@
           <th>Remise</th>
           <th>Stock</th>
           <th>Disponibilité (ON/OFF)</th>
+          <th>Mis en avant</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="produitsFiltres.length === 0">
-          <td colspan="9" style="text-align: center; color: #6b7280; padding: 30px;">
+          <td colspan="10" style="text-align: center; color: #6b7280; padding: 30px;">
             Aucun produit trouvé.
           </td>
         </tr>
@@ -209,6 +215,19 @@
               </label>
               <span class="toggle-label" :class="{ 'text-active': produit.disponible }">
                 {{ produit.disponible ? 'En Stock' : 'Rupture' }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Produit mis en avant (popup de lancement / après 10 min d'inactivité) -->
+          <td>
+            <div class="toggle-container">
+              <label class="switch switch-vedette">
+                <input type="checkbox" :checked="produit.vedette" @change="toggleVedette(produit)" />
+                <span class="slider round"></span>
+              </label>
+              <span class="toggle-label" :class="{ 'text-active': produit.vedette }">
+                {{ produit.vedette ? 'Mis en avant' : '—' }}
               </span>
             </div>
           </td>
@@ -267,7 +286,8 @@ const formProduit = ref({
   discount: '',
   stock: '',
   enSolde: false,
-  image: null 
+  vedette: false,
+  image: null
 })
 
 // --- APPELS API BACKEND ---
@@ -315,7 +335,7 @@ const handleFileUpload = (event) => {
 // --- ACTIONS MODALE ---
 const ouvrirModalAjout = () => {
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, vedette: false, image: null }
   afficherModal.value = true
 }
 
@@ -329,6 +349,7 @@ const ouvrirModalEdition = (produit) => {
     discount: produit.discount || '',
     stock: produit.stock,
     enSolde: produit.discount > 0,
+    vedette: Boolean(produit.vedette),
     image: null
   }
   afficherModal.value = true
@@ -337,7 +358,7 @@ const ouvrirModalEdition = (produit) => {
 const fermerModal = () => {
   afficherModal.value = false
   idEnEdition.value = null
-  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, image: null }
+  formProduit.value = { nom: '', categorie: CATEGORIES_BOUTIQUE[0], description: '', prix: '', discount: '', stock: '', enSolde: false, vedette: false, image: null }
 }
 
 // --- IMPORT EN MASSE (EXCEL / CSV) ---
@@ -436,6 +457,9 @@ const soumettreProduit = async () => {
     formData.append('image', formProduit.value.image)
   }
 
+  // Produit mis en avant (création comme modification).
+  formData.append('vedette', formProduit.value.vedette ? 'true' : 'false')
+
   try {
     if (idEnEdition.value !== null) {
       await axios.put(`${API_URL}/${idEnEdition.value}`, formData, getAuthHeaders())
@@ -483,6 +507,21 @@ const toggleDisponibilite = async (produit) => {
     console.error("Erreur lors de la mise à jour de disponibilité :", error)
     produit.disponible = ancienneValeur
     notify("Impossible de modifier la disponibilité.")
+  }
+}
+
+// Bascule « mis en avant » : le produit sera présenté par la popup du site
+// au lancement puis après 10 minutes d'inactivité du visiteur.
+const toggleVedette = async (produit) => {
+  const ancienneValeur = produit.vedette
+  produit.vedette = !produit.vedette
+
+  try {
+    await axios.put(`${API_URL}/${produit.id}`, { vedette: produit.vedette }, getAuthHeaders())
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de la mise en avant :", error)
+    produit.vedette = ancienneValeur
+    notify("Impossible de modifier la mise en avant.")
   }
 }
 
@@ -565,6 +604,9 @@ const formatImageUrl = (imagePath) => {
 .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; }
 input:checked + .slider { background-color: #16a34a; }
 input:checked + .slider:before { transform: translateX(20px); }
+/* Interrupteur « mis en avant » : couleur distincte (orange) */
+.switch-vedette input:checked + .slider { background-color: #f59e0b; }
+.switch-vedette ~ .toggle-label.text-active { color: #b45309; }
 .slider.round { border-radius: 24px; }
 .slider.round:before { border-radius: 50%; }
 

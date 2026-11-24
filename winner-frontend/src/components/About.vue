@@ -4,9 +4,9 @@
           <img src="/OIP2.webp" alt="Station Service">
       </div>
       <div class="apropos-text">
-          <h2>À Propos de WINNER Multiservice</h2>
+          <h2>À propos d'Ets Winner Multiservice</h2>
           <br>
-          <p>Fondée sur les valeurs de rigueur et de dynamisme, <strong>WINNER Multiservice</strong> s'impose comme un acteur incontournable dans le secteur de l'énergie et des services de proximité.</p>
+          <p>Fondée sur les valeurs de rigueur et de dynamisme, <strong>Ets Winner Multiservice</strong> s'impose comme un acteur incontournable dans le secteur de l'énergie et des services de proximité.</p>
           <p>Notre logo incarne notre vision : le bleu pour la fiabilité de notre gestion, le rouge pour la passion de notre métier et le dynamisme de nos équipes.</p>
           <p>En tant que distributeur des produits Total, nous nous engageons à fournir l'excellence à chacun de nos clients, qu'ils soient particuliers ou professionnels.</p>
       </div>

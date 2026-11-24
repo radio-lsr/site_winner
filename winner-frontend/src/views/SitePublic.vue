@@ -32,8 +32,9 @@
     <!-- Pied de page -->
     <Footer />
 
-    <!-- Bouton flottant Facebook -->
+    <!-- Boutons flottants réseaux sociaux -->
     <FacebookFloat />
+    <WhatsAppFloat />
 
     <!-- Modale Détails Produit -->
     <ProductModal 
@@ -80,6 +81,7 @@ import Articles from '../components/Articles.vue';
 import About from '../components/About.vue';
 import Footer from '../components/Footer.vue';
 import FacebookFloat from '../components/FacebookFloat.vue';
+import WhatsAppFloat from '../components/WhatsAppFloat.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';
@@ -253,6 +255,8 @@ const chargerProduits = async () => {
                     // Conservé uniquement s'il y a une remise -> affichage barré
                     prixOriginal: discount > 0 ? prixOriginal : null,
                     enSolde: discount > 0 || Boolean(p.enSolde),
+                    // Produit choisi par l'admin pour la mise en avant (popup).
+                    vedette: Boolean(p.vedette),
                     image: formatImageUrl(p.image),
                     specs: p.description || 'Produit disponible dans nos stations-service.',
                     noteMoyenne: Number(p.noteMoyenne) || 0,

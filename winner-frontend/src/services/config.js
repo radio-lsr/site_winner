@@ -22,8 +22,18 @@ export const API_BASE_URL = (envValue !== undefined && envValue !== null)
 // Racine complète des endpoints : http://localhost:5000/api
 export const API_URL = `${API_BASE_URL}/api`;
 
-// Page Facebook officielle de WINNER Multiservice (pied de page + bouton flottant)
-export const FACEBOOK_URL = 'https://www.facebook.com/etswinnermultiservice';
+// Page Facebook de WINNER Multiservice (cible de la redirection).
+export const FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61597049302114';
+
+// Adresse courte affichée sur le site : elle ne contient aucun identifiant
+// numérique et redirige vers la cible ci-dessus.
+export const FACEBOOK_LINK = '/facebook';
+
+// WhatsApp de WINNER Multiservice (bouton flottant) : numéro du pied de page,
+// avec un message pré-rempli.
+export const WHATSAPP_URL =
+  'https://wa.me/243980624652?text=' +
+  encodeURIComponent('Bonjour Winner Multiservice, je vous contacte depuis votre site.');
 
 /**
  * Construit l'URL absolue d'un fichier uploadé renvoyé par le backend.

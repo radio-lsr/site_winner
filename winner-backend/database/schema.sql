@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS produits (
   prix DECIMAL(10,2) NOT NULL DEFAULT 0,
   discount INT NOT NULL DEFAULT 0,
   en_solde TINYINT(1) NOT NULL DEFAULT 0,
+  -- Produit choisi par l'administrateur pour être mis en avant (popup de
+  -- lancement puis réapparition après 10 minutes d'inactivité du visiteur).
+  vedette TINYINT(1) NOT NULL DEFAULT 0,
   stock INT NOT NULL DEFAULT 0,
   statut ENUM('actif', 'inactif') NOT NULL DEFAULT 'actif',
   image_produit VARCHAR(255) DEFAULT NULL,
