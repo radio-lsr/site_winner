@@ -209,10 +209,28 @@ const appliquerMigrationCommandes = async (db) => {
   return true;
 };
 
+/**
+ * Ajoute la colonne `vedette` (produit mis en avant par l'administrateur)
+ * si la base ne la possède pas encore.
+ */
+const appliquerMigrationVedette = async (db) => {
+  const estMysql = typeof db.getConnection === 'function';
+  const [colonnes] = await db.query(estMysql ? 'SHOW COLUMNS FROM produits' : 'PRAGMA table_info(produits)');
+  const noms = new Set(colonnes.map(c => c.Field || c.name));
+
+  if (noms.has('vedette')) return false;
+
+  await db.query(estMysql
+    ? 'ALTER TABLE produits ADD COLUMN vedette TINYINT(1) NOT NULL DEFAULT 0'
+    : 'ALTER TABLE produits ADD COLUMN vedette INTEGER NOT NULL DEFAULT 0');
+  return true;
+};
+
 const appliquerMigrationProduits = async (db) => {
   try {
     await appliquerMigrationCode(db);
     await appliquerMigrationCommandes(db);
+    await appliquerMigrationVedette(db);
     const engine = (process.env.DB_ENGINE || '').toLowerCase();
     const resultat = engine === 'sqlite'
       ? await migrer(db, async () => (await db.query('PRAGMA table_info(produits)'))[0])
@@ -234,6 +252,7 @@ module.exports = {
   appliquerMigrationProduits,
   appliquerMigrationCode,
   appliquerMigrationCommandes,
+  appliquerMigrationVedette,
   categorieDepuisFamille,
   CATEGORIES_BOUTIQUE,
   CATEGORIE_DEFAUT

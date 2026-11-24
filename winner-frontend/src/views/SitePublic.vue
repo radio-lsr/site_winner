@@ -253,6 +253,8 @@ const chargerProduits = async () => {
                     // Conservé uniquement s'il y a une remise -> affichage barré
                     prixOriginal: discount > 0 ? prixOriginal : null,
                     enSolde: discount > 0 || Boolean(p.enSolde),
+                    // Produit choisi par l'admin pour la mise en avant (popup).
+                    vedette: Boolean(p.vedette),
                     image: formatImageUrl(p.image),
                     specs: p.description || 'Produit disponible dans nos stations-service.',
                     noteMoyenne: Number(p.noteMoyenne) || 0,

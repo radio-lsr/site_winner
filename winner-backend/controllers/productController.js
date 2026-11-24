@@ -23,6 +23,12 @@ const normaliserCategorie = (valeur, nom) => {
 // Normalise une référence produit : « prd-0012 » -> « PRD-0012 ».
 const normaliserCode = (valeur) => String(valeur ?? '').trim().toUpperCase();
 
+// Interprète une valeur booléenne venant d'un formulaire (« true », « false »,
+// « 1 », « on »…) ou d'un corps JSON.
+const parseBooleen = (valeur) =>
+  valeur === true || valeur === 1 || valeur === '1' ||
+  valeur === 'true' || valeur === 'on' || valeur === 'oui';
+
 // ------------------------------------------------------------------
 // Import en masse de produits depuis un fichier CSV ou Excel.
 // ------------------------------------------------------------------
@@ -285,6 +291,8 @@ exports.getAllProducts = async (req, res) => {
       prix: parseFloat(p.prix),
       discount: p.discount || 0,
       enSolde: Boolean(p.en_solde || p.discount > 0),
+      // Produit choisi par l'administrateur pour la mise en avant.
+      vedette: Boolean(p.vedette),
       stock: p.stock || 0,
       disponible: p.statut === 'actif',
       statut: p.statut,
@@ -304,7 +312,7 @@ exports.getAllProducts = async (req, res) => {
 // 2. Créer un nouveau produit (POST)
 exports.createProduct = async (req, res) => {
   try {
-    const { nom, categorie, prix, discount, stock, description, disponible } = req.body;
+    const { nom, categorie, prix, discount, stock, description, disponible, vedette } = req.body;
     const userId = req.user ? req.user.id : 1; 
 
     const statut = (disponible === 'false' || disponible === false) ? 'inactif' : 'actif';
@@ -321,9 +329,9 @@ exports.createProduct = async (req, res) => {
     }
 
     const [result] = await db.query(
-      `INSERT INTO produits (nom, categorie, description, prix, discount, en_solde, stock, statut, image_produit, user_id) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nom, catVal, descVal, parseFloat(prix), discountVal, enSoldeVal, parseInt(stock) || 0, statut, imgVal, userId]
+      `INSERT INTO produits (nom, categorie, description, prix, discount, en_solde, vedette, stock, statut, image_produit, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nom, catVal, descVal, parseFloat(prix), discountVal, enSoldeVal, parseBooleen(vedette) ? 1 : 0, parseInt(stock) || 0, statut, imgVal, userId]
     );
 
     res.status(201).json({ message: 'Produit créé avec succès', id: result.insertId });
@@ -346,14 +354,26 @@ exports.updateProduct = async (req, res) => {
       return res.json({ message: 'Statut mis à jour.' });
     }
 
+    // Cas A2 : Switch « mis en avant » (Requête JSON sans fichier).
+    if (body.vedette !== undefined && Object.keys(body).length === 1) {
+      await db.query('UPDATE produits SET vedette = ? WHERE id = ?', [parseBooleen(body.vedette) ? 1 : 0, id]);
+      return res.json({ message: 'Mise en avant mise à jour.' });
+    }
+
     // Cas B : Modification complète via la Modale (Requête FormData)
     const { nom, categorie, prix, discount, stock, description } = body;
-    
+
     const catVal = normaliserCategorie(categorie, nom);
     const descVal = description || '';
 
     let updateFields = 'nom = ?, categorie = ?, description = ?, prix = ?, discount = ?, en_solde = ?, stock = ?';
     const params = [nom, catVal, descVal, parseFloat(prix), parseInt(discount) || 0, (parseInt(discount) || 0) > 0 ? 1 : 0, parseInt(stock) || 0];
+
+    // La mise en avant peut aussi être réglée depuis le formulaire d'édition.
+    if (body.vedette !== undefined) {
+      updateFields += ', vedette = ?';
+      params.push(parseBooleen(body.vedette) ? 1 : 0);
+    }
 
     // Si une nouvelle image a été envoyée, on l'ajoute à la mise à jour
     if (req.file) {

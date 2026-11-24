@@ -17,7 +17,7 @@
           <button type="button" class="promo-close" aria-label="Fermer" @click="fermer">✕</button>
 
           <div class="promo-media">
-            <span class="promo-badge">🔥 En promotion</span>
+            <span class="promo-badge">{{ badge }}</span>
             <img :src="produitCourant.image" :alt="produitCourant.nom">
           </div>
 
@@ -29,7 +29,7 @@
             </p>
 
             <p class="promo-prix">
-              <span class="promo-barre">{{ formatPrix(produitCourant.prixOriginal) }}</span>
+              <span v-if="estPromo" class="promo-barre">{{ formatPrix(produitCourant.prixOriginal) }}</span>
               <span class="promo-actuel">{{ formatPrix(produitCourant.prix) }}</span>
             </p>
 
@@ -81,32 +81,46 @@ const props = defineProps({
 
 const emit = defineEmits(['select-product']);
 
-// Clé session : la popup ne s'ouvre qu'une fois par session de navigation.
-const CLE_SESSION = 'winner_promo_presentee';
+// La popup s'ouvre au lancement du site, puis réapparaît après 10 minutes
+// sans aucune manipulation de la page par le visiteur.
+const DUREE_INACTIVITE = 10 * 60 * 1000;
 const DUREE_DEFILLEMENT = 4500;
+const DELAI_OUVERTURE = 1200;
+const INTERVALLE_VERIF_INACTIVITE = 1000;
 
 const visible = ref(false);
 const index = ref(0);
-const DELAI_OUVERTURE = 1200;
 let minuteur = null;
 let delaiOuverture = null;
-let presentee = false;
+let minuteurInactivite = null;
+let derniereActivite = Date.now();
 
 // Un produit est « en promotion » s'il a un prix d'origine barré plus haut.
-const promos = computed(() =>
-  (props.produits || []).filter(p => p && p.prixOriginal && p.prixOriginal > p.prix)
+const enPromo = (p) => Boolean(p && p.prixOriginal && p.prixOriginal > p.prix);
+
+const promos = computed(() => (props.produits || []).filter(enPromo));
+
+// Produits choisis par l'administrateur pour être mis en avant.
+const vedettes = computed(() =>
+  (props.produits || []).filter(p => p && p.vedette && p.statut !== 'inactif')
 );
 
-const produitCourant = computed(() => promos.value[index.value] || null);
+// Ce qui est présenté : les produits choisis par l'admin ; à défaut, les
+// promotions (pour garder un contenu à montrer même sans sélection).
+const presents = computed(() => (vedettes.value.length ? vedettes.value : promos.value));
+
+const produitCourant = computed(() => presents.value[index.value] || null);
+const estPromo = computed(() => enPromo(produitCourant.value));
+const badge = computed(() => (estPromo.value ? '🔥 En promotion' : '★ Mis en avant'));
 
 const passeSuivant = () => {
-  if (promos.value.length <= 1) return;
-  index.value = (index.value + 1) % promos.value.length;
+  if (presents.value.length <= 1) return;
+  index.value = (index.value + 1) % presents.value.length;
 };
 
 const demarrerMinuteur = () => {
   arreterMinuteur();
-  if (promos.value.length > 1) {
+  if (presents.value.length > 1) {
     minuteur = setInterval(passeSuivant, DUREE_DEFILLEMENT);
   }
 };
@@ -124,7 +138,7 @@ const allerA = (i) => {
 };
 
 const precedent = () => {
-  const n = promos.value.length;
+  const n = presents.value.length;
   index.value = (index.value - 1 + n) % n;
   demarrerMinuteur();
 };
@@ -145,31 +159,42 @@ const fermer = () => {
   arreterMinuteur();
 };
 
-const ouvrirSiPromo = () => {
-  if (presentee || !promos.value.length || delaiOuverture) return;
-  // Petit délai : laisse le temps à l'API de renvoyer la vraie liste de
-  // produits (la liste de secours ne doit pas être mise en avant).
+// Ouvre la popup si du contenu est disponible.
+const ouvrir = () => {
+  if (visible.value || !presents.value.length) return false;
+  index.value = Math.min(index.value, presents.value.length - 1);
+  visible.value = true;
+  demarrerMinuteur();
+  return true;
+};
+
+// Premier affichage : au lancement du site (petit délai laissant le temps à
+// l'API de renvoyer la vraie liste de produits). Ensuite, seules les 10
+// minutes d'inactivité la font réapparaître.
+let dejaOuverte = false;
+
+const ouvrirSiPret = () => {
+  if (dejaOuverte || delaiOuverture) return;
   delaiOuverture = setTimeout(() => {
     delaiOuverture = null;
-    if (presentee || !promos.value.length) return;
-    // La popup ne s'ouvre qu'une fois par session de navigation.
-    let dejaVue = false;
-    try {
-      dejaVue = Boolean(sessionStorage.getItem(CLE_SESSION));
-    } catch {
-      /* sessionStorage indisponible (navigation privée) : on ignore */
-    }
-    presentee = true;
-    if (dejaVue) return;
-    try {
-      sessionStorage.setItem(CLE_SESSION, '1');
-    } catch {
-      /* idem : le stockage local peut être désactivé */
-    }
-    index.value = 0;
-    visible.value = true;
-    demarrerMinuteur();
+    if (ouvrir()) dejaOuverte = true;
   }, DELAI_OUVERTURE);
+};
+
+// Tout événement utilisateur remet le compteur d'inactivité à zéro.
+const EVENEMENTS_ACTIVITE = ['mousemove', 'mousedown', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'];
+
+const marquerActivite = () => {
+  derniereActivite = Date.now();
+};
+
+// Après 10 minutes sans manipulation, la popup réapparaît.
+const verifierInactivite = () => {
+  if (visible.value) return;
+  if (Date.now() - derniereActivite < DUREE_INACTIVITE) return;
+  // On évite les ouvertures en rafale si plusieurs cycles se chevauchent.
+  derniereActivite = Date.now();
+  ouvrir();
 };
 
 const gererEchap = (event) => {
@@ -177,7 +202,9 @@ const gererEchap = (event) => {
 };
 
 onMounted(() => {
-  ouvrirSiPromo();
+  ouvrirSiPret();
+  minuteurInactivite = setInterval(verifierInactivite, INTERVALLE_VERIF_INACTIVITE);
+  EVENEMENTS_ACTIVITE.forEach(nom => window.addEventListener(nom, marquerActivite, { passive: true }));
   window.addEventListener('keydown', gererEchap);
 });
 
@@ -187,12 +214,17 @@ onUnmounted(() => {
     clearTimeout(delaiOuverture);
     delaiOuverture = null;
   }
+  if (minuteurInactivite) {
+    clearInterval(minuteurInactivite);
+    minuteurInactivite = null;
+  }
+  EVENEMENTS_ACTIVITE.forEach(nom => window.removeEventListener(nom, marquerActivite));
   window.removeEventListener('keydown', gererEchap);
 });
 
 // La liste de produits peut arriver après le montage (appel API) : on
-// réessaie l'ouverture dès que des promotions sont disponibles.
-watch(promos, () => ouvrirSiPromo(), { immediate: true });
+// réessaie l'ouverture dès que des produits sont disponibles.
+watch(presents, () => ouvrirSiPret(), { immediate: true });
 </script>
 
 <style scoped>
