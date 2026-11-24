@@ -1,7 +1,7 @@
 <template>
   <!-- Bouton flottant vers la page Facebook (visible sur tout le site public) -->
   <a
-      :href="FACEBOOK_URL"
+      :href="FACEBOOK_LINK"
       target="_blank"
       rel="noopener noreferrer"
       class="facebook-float"
@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { FACEBOOK_URL } from '../services/config';
+import { FACEBOOK_LINK } from '../services/config';
 </script>
 
 <style scoped>
