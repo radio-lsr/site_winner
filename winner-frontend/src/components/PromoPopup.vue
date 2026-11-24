@@ -17,7 +17,7 @@
           <button type="button" class="promo-close" aria-label="Fermer" @click="fermer">✕</button>
 
           <div class="promo-media">
-            <span class="promo-badge">{{ badge }}</span>
+            <span v-if="estPromo" class="promo-badge">🔥 En promotion</span>
             <img :src="produitCourant.image" :alt="produitCourant.nom">
           </div>
 
@@ -111,7 +111,6 @@ const presents = computed(() => (vedettes.value.length ? vedettes.value : promos
 
 const produitCourant = computed(() => presents.value[index.value] || null);
 const estPromo = computed(() => enPromo(produitCourant.value));
-const badge = computed(() => (estPromo.value ? '🔥 En promotion' : '★ Mis en avant'));
 
 const passeSuivant = () => {
   if (presents.value.length <= 1) return;
