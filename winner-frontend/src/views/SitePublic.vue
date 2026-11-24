@@ -32,8 +32,9 @@
     <!-- Pied de page -->
     <Footer />
 
-    <!-- Bouton flottant Facebook -->
+    <!-- Boutons flottants réseaux sociaux -->
     <FacebookFloat />
+    <WhatsAppFloat />
 
     <!-- Modale Détails Produit -->
     <ProductModal 
@@ -80,6 +81,7 @@ import Articles from '../components/Articles.vue';
 import About from '../components/About.vue';
 import Footer from '../components/Footer.vue';
 import FacebookFloat from '../components/FacebookFloat.vue';
+import WhatsAppFloat from '../components/WhatsAppFloat.vue';
 import ProductModal from '../components/ProductModal.vue';
 import ArticleModal from '../components/ArticleModal.vue';
 import CartModal from '../components/CartModal.vue';

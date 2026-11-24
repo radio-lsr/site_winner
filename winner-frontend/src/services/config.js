@@ -29,6 +29,12 @@ export const FACEBOOK_URL = 'https://www.facebook.com/profile.php?id=61597049302
 // numérique et redirige vers la cible ci-dessus.
 export const FACEBOOK_LINK = '/facebook';
 
+// WhatsApp de WINNER Multiservice (bouton flottant) : numéro du pied de page,
+// avec un message pré-rempli.
+export const WHATSAPP_URL =
+  'https://wa.me/243899227878?text=' +
+  encodeURIComponent('Bonjour WINNER Multiservice, je vous contacte depuis votre site.');
+
 /**
  * Construit l'URL absolue d'un fichier uploadé renvoyé par le backend.
  * Le backend renvoie des chemins relatifs comme "/uploads/xxx.png".

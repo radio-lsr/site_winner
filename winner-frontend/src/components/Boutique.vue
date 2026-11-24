@@ -13,7 +13,6 @@
                   <img :src="produit.image" :alt="produit.nom">
               </div>
               <h3>{{ produit.nom }}</h3>
-              <span class="code-produit">Code : {{ produit.code || 'PRD-' + String(produit.id).padStart(4, '0') }}</span>
               <!-- Note moyenne des clients (si des avis existent) -->
               <p v-if="produit.nbAvis > 0" class="note-carte" :title="produit.noteMoyenne.toFixed(1) + '/5'">
                   <span v-for="i in 5" :key="i" :class="i <= Math.round(produit.noteMoyenne) ? 'etoile-c pleine' : 'etoile-c'">★</span>
@@ -151,7 +150,6 @@ const enPromo = (produit) => Boolean(produit && produit.prixOriginal && produit.
 .prix-actuel { color: #E31E24; font-size: 22px; font-weight: bold; }
 .btn-sm { background: #143489; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
 .btn-sm:hover { background: #E31E24; }
-.code-produit { display: inline-block; font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
 
 /* --- Pagination --- */
 .aucun-produit { color: #6b7280; font-size: 18px; padding: 40px 0; }
