@@ -3,7 +3,7 @@
       <h2 class="section-title">Notre Galerie</h2>
       <p style="text-align: center; margin-bottom: 40px; color: #555;">Découvrez nos installations, nos produits et nos vidéos en action.</p>
       <div class="galerie-container">
-          <div v-for="(item, index) in listeGalerie" :key="index" class="galerie-item">
+          <div v-for="(item, index) in elementsPagines" :key="index" class="galerie-item">
               <img v-if="item.type === 'image'" :src="item.url" :alt="item.titre">
               <video v-if="item.type === 'video'" controls preload="metadata">
                   <source :src="item.url" type="video/mp4">
@@ -14,16 +14,34 @@
               </div>
           </div>
       </div>
+
+      <!-- Pagination dès que la galerie dépasse 12 éléments -->
+      <Pagination v-model="pageCourante" :total-elements="listeGalerie.length" />
   </section>
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed, watch } from 'vue';
+import Pagination from './Pagination.vue';
+
+const props = defineProps({
     listeGalerie: {
         type: Array,
         required: true
     }
 });
+
+// Nombre d'éléments affichés par page de la galerie.
+const PAR_PAGE = 12;
+const pageCourante = ref(1);
+
+const elementsPagines = computed(() => {
+    const debut = (pageCourante.value - 1) * PAR_PAGE;
+    return props.listeGalerie.slice(debut, debut + PAR_PAGE);
+});
+
+// Tout changement de liste repart de la première page.
+watch(() => props.listeGalerie, () => { pageCourante.value = 1; });
 </script>
 
 <style scoped>

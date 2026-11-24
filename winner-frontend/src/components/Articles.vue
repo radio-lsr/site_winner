@@ -2,7 +2,7 @@
   <section id="articles">
       <h2 class="section-title">Conseils & Tutoriels</h2>
       <div class="articles-container">
-          <div v-for="article in listeArticles" :key="article.id" class="article-card" @click="$emit('select-article', article)">
+          <div v-for="article in articlesPagines" :key="article.id" class="article-card" @click="$emit('select-article', article)">
               <img :src="article.image" :alt="article.titre">
               <div class="article-content">
                   <h3>{{ article.titre }}</h3>
@@ -11,17 +11,35 @@
               </div>
           </div>
       </div>
+
+      <!-- Pagination dès que les conseils et tutoriels dépassent 12 -->
+      <Pagination v-model="pageCourante" :total-elements="listeArticles.length" />
   </section>
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed, watch } from 'vue';
+import Pagination from './Pagination.vue';
+
+const props = defineProps({
     listeArticles: {
         type: Array,
         required: true
     }
 });
 defineEmits(['select-article']);
+
+// Nombre de conseils / tutoriels affichés par page.
+const PAR_PAGE = 12;
+const pageCourante = ref(1);
+
+const articlesPagines = computed(() => {
+    const debut = (pageCourante.value - 1) * PAR_PAGE;
+    return props.listeArticles.slice(debut, debut + PAR_PAGE);
+});
+
+// Tout changement de liste repart de la première page.
+watch(() => props.listeArticles, () => { pageCourante.value = 1; });
 </script>
 
 <style scoped>
