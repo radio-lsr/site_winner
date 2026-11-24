@@ -32,7 +32,7 @@ export const FACEBOOK_LINK = '/facebook';
 // WhatsApp de WINNER Multiservice (bouton flottant) : numéro du pied de page,
 // avec un message pré-rempli.
 export const WHATSAPP_URL =
-  'https://wa.me/243899227878?text=' +
+  'https://wa.me/243980624652?text=' +
   encodeURIComponent('Bonjour WINNER Multiservice, je vous contacte depuis votre site.');
 
 /**
