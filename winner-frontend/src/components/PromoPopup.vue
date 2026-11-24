@@ -22,7 +22,7 @@
           </div>
 
           <div class="promo-body">
-            <p class="promo-eyebrow">WINNER Multiservice</p>
+            <p class="promo-eyebrow">Ets Winner Multiservice</p>
             <h3 class="promo-nom">{{ produitCourant.nom }}</h3>
             <p class="promo-desc">
               {{ produitCourant.specs || 'Produit disponible dans nos stations-service.' }}

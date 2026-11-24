@@ -2,8 +2,9 @@
   <footer id="contact">
       <div class="footer-container">
           <div class="footer-info">
-              <h3>Contactez-nous</h3>
-              <p>📍 1 Avenue Colonel mondjiba, Ngaliema, Kinshasa - RD CONGO</p>
+              <h3>Ets Winner Multiservice</h3>
+              <p>📍 01, Avenue Colonel Mondjiba, Ngaliema.</p>
+              <p>Réf : Kintambo Magasin</p>
               <p>📞 Téléphone : +243 89 922 78 78</p>
               <p>✉️ Pour nous écrire, utilisez le formulaire de contact.</p>
               <br>
@@ -33,7 +34,7 @@
           </div>
       </div>
           <div class="footer-bottom">
-              <p>&copy; 2026 WINNER Multiservice. Tous droits réservés. Créé pour le succès de votre réseau.</p>
+              <p>&copy; 2026 Ets Winner Multiservice. Tous droits réservés. Créé pour le succès de votre réseau.</p>
               <router-link to="/admin/login" class="lien-admin" title="Accès réservé à l'administration">Espace administrateur</router-link>
           </div>
   </footer>

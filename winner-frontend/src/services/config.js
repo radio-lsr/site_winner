@@ -33,7 +33,7 @@ export const FACEBOOK_LINK = '/facebook';
 // avec un message pré-rempli.
 export const WHATSAPP_URL =
   'https://wa.me/243980624652?text=' +
-  encodeURIComponent('Bonjour WINNER Multiservice, je vous contacte depuis votre site.');
+  encodeURIComponent('Bonjour Winner Multiservice, je vous contacte depuis votre site.');
 
 /**
  * Construit l'URL absolue d'un fichier uploadé renvoyé par le backend.

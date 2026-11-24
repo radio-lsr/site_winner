@@ -1,8 +1,8 @@
 <template>
   <header>
       <a href="#accueil" class="logo">
-          <img src="/Logo-Winner.png" alt="Logo Winner Multiservice" onerror="this.style.display='none'">
-          <h1>WINNER <span>Multiservice</span></h1>
+          <img src="/Logo-Winner.png" alt="Logo Ets Winner Multiservice" onerror="this.style.display='none'">
+          <h1>Ets Winner <span>Multiservice</span></h1>
       </a>
       <nav>
           <ul>
